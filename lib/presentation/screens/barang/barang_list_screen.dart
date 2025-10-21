@@ -76,7 +76,7 @@ class _BarangListScreenState extends State<BarangListScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(
+                  const BoxShadow(
                     color: Colors.black12,
                     blurRadius: 4,
                     offset: Offset(0, 2),
@@ -103,7 +103,7 @@ class _BarangListScreenState extends State<BarangListScreen> {
           ),
           Expanded(
             child: barangProvider.isLoading
-                ? Center(
+                ? const Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : _filteredBarang.isEmpty
@@ -148,6 +148,7 @@ class _BarangListScreenState extends State<BarangListScreen> {
                           nama: 'Tidak Diketahui',
                           warna:
                               '#${AppColors.primary.value.toRadixString(16)}',
+                          UserId: null,
                         ),
                       );
 
@@ -419,7 +420,7 @@ class _BarangListScreenState extends State<BarangListScreen> {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Barang berhasil dihapus'),
+                  content: const Text('Barang berhasil dihapus'),
                   backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(

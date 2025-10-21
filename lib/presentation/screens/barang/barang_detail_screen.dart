@@ -5,12 +5,31 @@ import '../../../data/models/kategori_model.dart';
 import '../../../core/constants/app_colors.dart';
 
 class BarangDetailScreen extends StatelessWidget {
+  // Helper function untuk convert string warna ke Color
+  Color _getColorFromString(String? warnaString) {
+    if (warnaString == null || warnaString.isEmpty) {
+      return AppColors.primary;
+    }
+
+    try {
+      String hexColor = warnaString.toUpperCase().replaceAll("#", "");
+      if (hexColor.length == 6) {
+        hexColor = "FF$hexColor";
+      }
+      return Color(int.parse(hexColor, radix: 16));
+    } catch (e) {
+      return AppColors.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final BarangModel barang = args['barang'];
     final KatagoriModel kategori = args['kategori'];
+
+    final Color kategoriColor = _getColorFromString(kategori.warna);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -39,7 +58,6 @@ class BarangDetailScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Header Card
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -49,8 +67,8 @@ class BarangDetailScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withOpacity(0.1),
-                        AppColors.primary.withOpacity(0.05),
+                        kategoriColor.withOpacity(0.9),
+                        kategoriColor.withOpacity(0.7),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -66,13 +84,13 @@ class BarangDetailScreen extends StatelessWidget {
                         width: ResponsiveLayout.isMobile(context) ? 60 : 80,
                         height: ResponsiveLayout.isMobile(context) ? 60 : 80,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.inventory_2,
                           size: ResponsiveLayout.isMobile(context) ? 30 : 40,
-                          color: AppColors.primary,
+                          color: Colors.white,
                         ),
                       ),
                       SizedBox(
@@ -85,7 +103,7 @@ class BarangDetailScreen extends StatelessWidget {
                               ? 20
                               : 24,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.grey800,
+                          color: Colors.white,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -100,22 +118,14 @@ class BarangDetailScreen extends StatelessWidget {
                           vertical: ResponsiveLayout.isMobile(context) ? 6 : 8,
                         ),
                         decoration: BoxDecoration(
-                          color: barang.stok > 10
-                              ? AppColors.success.withOpacity(0.1)
-                              : AppColors.warning.withOpacity(0.1),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: barang.stok > 10
-                                ? AppColors.success
-                                : AppColors.warning,
-                          ),
+                          border: Border.all(color: Colors.white),
                         ),
                         child: Text(
                           barang.stok > 10 ? 'Stok Aman' : 'Stok Menipis',
                           style: TextStyle(
-                            color: barang.stok > 10
-                                ? AppColors.success
-                                : AppColors.warning,
+                            color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: ResponsiveLayout.isMobile(context)
                                 ? 12
@@ -129,7 +139,7 @@ class BarangDetailScreen extends StatelessWidget {
               ),
               SizedBox(height: ResponsiveLayout.isMobile(context) ? 16 : 24),
 
-              // Detail Information
+              // Detail Information - TIDAK DIUBAH
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -173,7 +183,7 @@ class BarangDetailScreen extends StatelessWidget {
               ),
               SizedBox(height: ResponsiveLayout.isMobile(context) ? 16 : 24),
 
-              // Statistics Card
+              // Statistics Card - TIDAK DIUBAH
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(

@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ],
       ),
-      child: Image.asset('assets/Gstok Logo.png', fit: BoxFit.contain),
+      child: Image.asset('assets/images/Gstok Logo.png', fit: BoxFit.contain),
     );
   }
 

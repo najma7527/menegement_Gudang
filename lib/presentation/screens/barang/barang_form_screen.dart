@@ -3,6 +3,7 @@ import 'package:gstok/presentation/screens/responsive_layout.dart';
 import 'package:provider/provider.dart';
 import '../../providers/barang_provider.dart';
 import '../../providers/kategori_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../../data/models/barang_model.dart';
 import '../../../core/constants/app_colors.dart';
 
@@ -41,10 +42,88 @@ class _BarangFormScreenState extends State<BarangFormScreen> {
     }
   }
 
+  // METHOD BARU: Validasi dan submit form
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final barangProvider = Provider.of<BarangProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // DAPATKAN USER ID DARI AUTH PROVIDER
+    final currentUserId = authProvider.currentUser?.id;
+
+    // VALIDASI: Pastikan user ID tidak null dan user sudah login
+    if (currentUserId == null || !authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error: User tidak terautentikasi. Silakan login kembali.',
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final barang = BarangModel(
+      id: _editingBarang?.id,
+      nama: _namaController.text,
+      katagoriId: _selectedKatagoriId!,
+      stok: int.parse(_stokController.text),
+      harga: double.parse(_hargaController.text),
+      UserId: currentUserId, // GUNAKAN USER ID YANG SESUNGGUHNYA
+    );
+
+    print('DATA BARANG KIRIM: ${barang.toJson()}'); // Debug print
+
+    bool success;
+    if (_editingBarang == null) {
+      success = await barangProvider.addBarang(barang);
+    } else {
+      success = await barangProvider.updateBarang(_editingBarang!.id!, barang);
+    }
+
+    if (success) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Barang berhasil disimpan'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal menyimpan barang: ${barangProvider.error ?? "Unknown error"}',
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final barangProvider = Provider.of<BarangProvider>(context);
     final katagoriProvider = Provider.of<KatagoriProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(
+      context,
+    ); // TAMBAHKAN AUTH PROVIDER
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -158,18 +237,79 @@ class _BarangFormScreenState extends State<BarangFormScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: ResponsiveLayout.getFormPadding(context), // RESPONSIVE PADDING
+        padding: ResponsiveLayout.getFormPadding(context),
         child: Center(
           child: Container(
             constraints: BoxConstraints(
-              maxWidth: ResponsiveLayout.getFormWidth(
-                context,
-              ), // RESPONSIVE WIDTH
+              maxWidth: ResponsiveLayout.getFormWidth(context),
             ),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
+                  // Informasi Authentication Status (BARU)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(12),
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.grey100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.grey300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              authProvider.isAuthenticated
+                                  ? Icons.verified_user
+                                  : Icons.warning,
+                              size: 16,
+                              color: authProvider.isAuthenticated
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              authProvider.isAuthenticated
+                                  ? 'User Terautentikasi'
+                                  : 'User Tidak Terautentikasi',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: authProvider.isAuthenticated
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (authProvider.currentUser != null) ...[
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 12,
+                                color: AppColors.grey600,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'User ID: ${authProvider.currentUser!.id}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.grey600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
                   // Nama Barang Field
                   Container(
                     decoration: BoxDecoration(
@@ -337,6 +477,39 @@ class _BarangFormScreenState extends State<BarangFormScreen> {
                   ),
                   SizedBox(height: 32),
 
+                  // Pesan error jika user tidak terautentikasi
+                  if (!authProvider.isAuthenticated) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12),
+                      margin: EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.warning),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning,
+                            size: 16,
+                            color: AppColors.warning,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Anda harus login untuk menyimpan barang',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.warning,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // Save Button
                   Container(
                     width: double.infinity,
@@ -363,56 +536,11 @@ class _BarangFormScreenState extends State<BarangFormScreen> {
                             ),
                           )
                         : ElevatedButton(
-                            onPressed: () async {
-                              if (_formKey.currentState!.validate()) {
-                                final barang = BarangModel(
-                                  id: _editingBarang?.id,
-                                  nama: _namaController.text,
-                                  katagoriId: _selectedKatagoriId!,
-                                  stok: int.parse(_stokController.text),
-                                  harga: double.parse(_hargaController.text),
-                                );
-
-                                bool success;
-                                if (_editingBarang == null) {
-                                  success = await barangProvider.addBarang(
-                                    barang,
-                                  );
-                                } else {
-                                  success = await barangProvider.updateBarang(
-                                    _editingBarang!.id!,
-                                    barang,
-                                  );
-                                }
-
-                                if (success) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Barang berhasil disimpan'),
-                                      backgroundColor: AppColors.success,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Gagal menyimpan barang: ${barangProvider.error}',
-                                      ),
-                                      backgroundColor: AppColors.error,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            onPressed:
+                                (barangProvider.isLoading ||
+                                    !authProvider.isAuthenticated)
+                                ? null
+                                : _submitForm,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,

@@ -4,12 +4,14 @@ class BarangModel extends BarangEntity {
   BarangModel({
     int? id,
     required String nama,
+    required int UserId,
     required int katagoriId,
     required int stok,
     required double harga,
   }) : super(
          id: id,
          nama: nama,
+         UserId: UserId,
          katagoriId: katagoriId,
          stok: stok,
          harga: harga,
@@ -19,6 +21,7 @@ class BarangModel extends BarangEntity {
     return BarangModel(
       id: entity.id,
       nama: entity.nama,
+      UserId: entity.UserId,
       katagoriId: entity.katagoriId,
       stok: entity.stok,
       harga: entity.harga,
@@ -29,6 +32,7 @@ class BarangModel extends BarangEntity {
     return BarangModel(
       id: json['id'],
       nama: json['nama'],
+      UserId: json['user_id'],
       katagoriId: json['katagori_id'],
       stok: json['stok'],
       harga: double.parse(json['harga'].toString()),
@@ -39,6 +43,7 @@ class BarangModel extends BarangEntity {
     return {
       'id': id,
       'nama': nama,
+      'user_id': UserId,
       'katagori_id': katagoriId,
       'stok': stok,
       'harga': harga,
@@ -48,6 +53,7 @@ class BarangModel extends BarangEntity {
   BarangModel copyWith({
     int? id,
     String? nama,
+    int? UserId,
     int? katagoriId,
     int? stok,
     double? harga,
@@ -55,6 +61,7 @@ class BarangModel extends BarangEntity {
     return BarangModel(
       id: id ?? this.id,
       nama: nama ?? this.nama,
+      UserId: UserId ?? this.UserId,
       katagoriId: katagoriId ?? this.katagoriId,
       stok: stok ?? this.stok,
       harga: harga ?? this.harga,

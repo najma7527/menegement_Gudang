@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      child: Image.asset('assets/Gstok Logo.png', fit: BoxFit.contain),
+      child: Image.asset('assets/images/Gstok Logo.png', fit: BoxFit.contain),
     );
   }
 

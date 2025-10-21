@@ -4,6 +4,7 @@ class TransaksiModel extends TransaksiEntity {
   TransaksiModel({
     int? id,
     required int barangId,
+    required int UserId,
     required int jumlah,
     required double totalHarga,
     required String tipeTransaksi,
@@ -12,6 +13,7 @@ class TransaksiModel extends TransaksiEntity {
   }) : super(
          id: id,
          barangId: barangId,
+          UserId: UserId,
          jumlah: jumlah,
          totalHarga: totalHarga,
          tipeTransaksi: tipeTransaksi,
@@ -23,6 +25,7 @@ class TransaksiModel extends TransaksiEntity {
     return TransaksiModel(
       id: entity.id,
       barangId: entity.barangId,
+      UserId: entity.UserId,
       jumlah: entity.jumlah,
       totalHarga: entity.totalHarga,
       tipeTransaksi: entity.tipeTransaksi,
@@ -35,6 +38,7 @@ class TransaksiModel extends TransaksiEntity {
     return TransaksiModel(
       id: json['id'],
       barangId: json['barang_id'],
+      UserId: json['user_id'],
       jumlah: json['jumlah'],
       totalHarga: double.parse(json['total_harga'].toString()),
       tipeTransaksi: json['tipe_transaksi'],
@@ -48,6 +52,7 @@ class TransaksiModel extends TransaksiEntity {
     return {
       'id': id,
       'barang_id': barangId,
+      'user_id': UserId,
       'jumlah': jumlah,
       'total_harga': totalHarga,
       'tipe_transaksi': tipeTransaksi,
@@ -64,6 +69,7 @@ class TransaksiModel extends TransaksiEntity {
     return other is TransaksiModel &&
         other.id == id &&
         other.barangId == barangId &&
+        other.UserId == UserId &&
         other.jumlah == jumlah &&
         other.totalHarga == totalHarga &&
         other.tipeTransaksi == tipeTransaksi &&
@@ -75,6 +81,7 @@ class TransaksiModel extends TransaksiEntity {
   int get hashCode {
     return id.hashCode ^
         barangId.hashCode ^
+        UserId.hashCode ^
         jumlah.hashCode ^
         totalHarga.hashCode ^
         tipeTransaksi.hashCode ^

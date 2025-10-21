@@ -1,6 +1,7 @@
 class TransaksiEntity {
   final int? id;
   final int barangId;
+  final int UserId;
   final int jumlah;
   final double totalHarga;
   final String tipeTransaksi;
@@ -15,6 +16,7 @@ class TransaksiEntity {
     required this.tipeTransaksi,
     required this.hargaSatuan,
     required this.tanggal,
+    required this.UserId,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class TransaksiEntity {
       'tipe_transaksi': tipeTransaksi,
       'harga_satuan': hargaSatuan,
       'tanggal': tanggal.toIso8601String(),
+      'user_id': UserId,
     };
   }
 
@@ -33,6 +36,7 @@ class TransaksiEntity {
     return TransaksiEntity(
       id: json['id'],
       barangId: json['barang_id'],
+      UserId: json['user_id'],
       jumlah: json['jumlah'],
       totalHarga: double.parse(json['total_harga'].toString()),
       tipeTransaksi: json['tipe_transaksi'],

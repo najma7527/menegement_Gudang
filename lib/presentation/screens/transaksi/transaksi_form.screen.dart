@@ -3,6 +3,7 @@ import 'package:gstok/presentation/screens/responsive_layout.dart';
 import 'package:provider/provider.dart';
 import '../../providers/transaksi_provider.dart';
 import '../../providers/barang_provider.dart';
+import '../../providers/auth_provider.dart'; // TAMBAHKAN IMPORT
 import '../../../data/models/transaksi_model.dart';
 import '../../../data/models/barang_model.dart';
 import '../../../core/constants/app_colors.dart';
@@ -78,10 +79,115 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
     }
   }
 
+  // METHOD BARU: Validasi dan submit form
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() && _selectedBarang != null) {
+      final transaksiProvider = Provider.of<TransaksiProvider>(
+        context,
+        listen: false,
+      );
+      final barangProvider = Provider.of<BarangProvider>(
+        context,
+        listen: false,
+      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // DAPATKAN USER ID DARI AUTH PROVIDER
+      final currentUserId = authProvider.currentUser?.id;
+
+      // VALIDASI: Pastikan user ID tidak null dan user sudah login
+      if (currentUserId == null || !authProvider.isAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: User tidak terautentikasi. Silakan login kembali.',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+
+      final jumlah = int.parse(_jumlahController.text);
+      final hargaSatuan = double.parse(_hargaSatuanController.text);
+      final totalHarga = jumlah * hargaSatuan;
+
+      final transaksi = TransaksiModel(
+        id: _editingTransaksi?.id,
+        barangId: _selectedBarang!.id!,
+        jumlah: jumlah,
+        totalHarga: totalHarga,
+        tipeTransaksi: _selectedTipe,
+        hargaSatuan: hargaSatuan,
+        tanggal: _selectedDate,
+        UserId: currentUserId, // GUNAKAN USER ID YANG SESUNGGUHNYA
+      );
+
+      print('DATA TRANSAKSI KIRIM: ${transaksi.toJson()}'); // Debug print
+
+      bool success;
+      if (_editingTransaksi == null) {
+        success = await transaksiProvider.addTransaksi(
+          transaksi,
+          updateStokCallback: (barangId, jumlah, tipe) async {
+            return await barangProvider.updateStokBarang(
+              barangId,
+              jumlah,
+              tipe,
+            );
+          },
+        );
+      } else {
+        success = await transaksiProvider.updateTransaksi(
+          _editingTransaksi!.id!,
+          transaksi,
+        );
+      }
+
+      if (success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _editingTransaksi == null
+                  ? 'Transaksi berhasil ditambahkan'
+                  : 'Transaksi berhasil diupdate',
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Gagal menyimpan transaksi: ${transaksiProvider.error ?? "Unknown error"}',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final transaksiProvider = Provider.of<TransaksiProvider>(context);
     final barangProvider = Provider.of<BarangProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(
+      context,
+    ); // TAMBAHKAN AUTH PROVIDER
 
     final jumlah = int.tryParse(_jumlahController.text) ?? 0;
     final hargaSatuan = double.tryParse(_hargaSatuanController.text) ?? 0;
@@ -198,19 +304,79 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        // TAMBAHKAN: Scrollable
-        padding: ResponsiveLayout.getFormPadding(context), // RESPONSIVE PADDING
+        padding: ResponsiveLayout.getFormPadding(context),
         child: Center(
           child: Container(
             constraints: BoxConstraints(
-              maxWidth: ResponsiveLayout.getFormWidth(
-                context,
-              ), // RESPONSIVE WIDTH
+              maxWidth: ResponsiveLayout.getFormWidth(context),
             ),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
+                  // Informasi Authentication Status (BARU)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(12),
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.grey100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.grey300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              authProvider.isAuthenticated
+                                  ? Icons.verified_user
+                                  : Icons.warning,
+                              size: 16,
+                              color: authProvider.isAuthenticated
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              authProvider.isAuthenticated
+                                  ? 'User Terautentikasi'
+                                  : 'User Tidak Terautentikasi',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: authProvider.isAuthenticated
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (authProvider.currentUser != null) ...[
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 12,
+                                color: AppColors.grey600,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'User ID: ${authProvider.currentUser!.id}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.grey600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
                   // Header Info
                   Card(
                     elevation: 4,
@@ -623,6 +789,39 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
                       ),
                     ),
 
+                  // Pesan error jika user tidak terautentikasi
+                  if (!authProvider.isAuthenticated) ...[
+                    SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.warning),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning,
+                            size: 16,
+                            color: AppColors.warning,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Anda harus login untuk menyimpan transaksi',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.warning,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   SizedBox(height: 32),
 
                   // Save Button - RESPONSIVE
@@ -651,77 +850,11 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
                             ),
                           )
                         : ElevatedButton(
-                            onPressed: () async {
-                              if (_formKey.currentState!.validate() &&
-                                  _selectedBarang != null) {
-                                final transaksi = TransaksiModel(
-                                  id: _editingTransaksi?.id,
-                                  barangId: _selectedBarang!.id!,
-                                  jumlah: int.parse(_jumlahController.text),
-                                  totalHarga: totalHarga,
-                                  tipeTransaksi: _selectedTipe,
-                                  hargaSatuan: double.parse(
-                                    _hargaSatuanController.text,
-                                  ),
-                                  tanggal: _selectedDate,
-                                );
-
-                                bool success;
-                                if (_editingTransaksi == null) {
-                                  // UBAH: Panggil dengan callback update stok
-                                  success = await transaksiProvider
-                                      .addTransaksi(
-                                        transaksi,
-                                        updateStokCallback:
-                                            (barangId, jumlah, tipe) async {
-                                              return await barangProvider
-                                                  .updateStokBarang(
-                                                    barangId,
-                                                    jumlah,
-                                                    tipe,
-                                                  );
-                                            },
-                                      );
-                                } else {
-                                  success = await transaksiProvider
-                                      .updateTransaksi(
-                                        _editingTransaksi!.id!,
-                                        transaksi,
-                                      );
-                                }
-
-                                if (success) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        _editingTransaksi == null
-                                            ? 'Transaksi berhasil ditambahkan'
-                                            : 'Transaksi berhasil diupdate',
-                                      ),
-                                      backgroundColor: AppColors.success,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Gagal menyimpan transaksi: ${transaksiProvider.error}',
-                                      ),
-                                      backgroundColor: AppColors.error,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            onPressed:
+                                (transaksiProvider.isLoading ||
+                                    !authProvider.isAuthenticated)
+                                ? null
+                                : _submitForm,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
@@ -750,7 +883,6 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
     );
   }
 
-  // TAMBAHKAN: Method untuk menghitung stok setelah transaksi
   int _calculateStokAfterTransaction() {
     if (_selectedBarang == null || _jumlahController.text.isEmpty) {
       return _selectedBarang?.stok ?? 0;

@@ -3,10 +3,17 @@ import '../../domain/entities/katagori_entity.dart';
 class KatagoriModel extends KatagoriEntity {
   KatagoriModel({
     int? id,
+    required int? UserId,
     required String nama,
     String? deskripsi,
     String? warna,
-  }) : super(id: id, nama: nama, deskripsi: deskripsi, warna: warna);
+  }) : super(
+         id: id,
+         nama: nama,
+         deskripsi: deskripsi,
+         warna: warna,
+         userId: UserId,
+       );
 
   factory KatagoriModel.fromEntity(KatagoriEntity entity) {
     return KatagoriModel(
@@ -14,6 +21,7 @@ class KatagoriModel extends KatagoriEntity {
       nama: entity.nama,
       deskripsi: entity.deskripsi,
       warna: entity.warna,
+      UserId: entity.userId,
     );
   }
 
@@ -23,6 +31,7 @@ class KatagoriModel extends KatagoriEntity {
       nama: json['nama'],
       deskripsi: json['deskripsi'],
       warna: json['warna'],
+      UserId: json['user_id'],
     );
   }
 
@@ -32,6 +41,7 @@ class KatagoriModel extends KatagoriEntity {
       'nama': nama,
       'deskripsi': deskripsi ?? "",
       'warna': warna ?? "",
+      'user_id': userId,
     };
   }
 }

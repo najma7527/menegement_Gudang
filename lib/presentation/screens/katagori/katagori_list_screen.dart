@@ -164,7 +164,6 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
     );
   }
 
-  // Dalam _buildKategoriCard di katagori_list_screen.dart
   Widget _buildKategoriCard(
     BuildContext context,
     KatagoriModel kategori,
@@ -241,25 +240,6 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
               }
             },
             itemBuilder: (BuildContext context) => [
-              PopupMenuItem<String>(
-                value: 'detail',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.visibility,
-                      color: AppColors.primary,
-                      size: ResponsiveLayout.isMobile(context) ? 18 : 20,
-                    ),
-                    SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
-                    Text(
-                      'Detail',
-                      style: TextStyle(
-                        fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               PopupMenuItem<String>(
                 value: 'edit',
                 child: Row(

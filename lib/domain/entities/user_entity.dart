@@ -3,12 +3,14 @@ class UserEntity {
   final String name;
   final String email;
   final String? password;
+  final String? profile_photo;
 
   UserEntity({
     this.id,
     required this.name,
     required this.email,
     this.password,
+    this.profile_photo,
   });
 
   Map<String, dynamic> toJson() {
@@ -17,6 +19,7 @@ class UserEntity {
       'name': name,
       'email': email,
       'password': password,
+      'profile_photo': profile_photo,
     };
   }
 
@@ -26,6 +29,7 @@ class UserEntity {
       name: json['name'],
       email: json['email'],
       password: json['password'],
+      profile_photo: json['profile_photo'],
     );
   }
 }
