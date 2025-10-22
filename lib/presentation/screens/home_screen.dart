@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gstok/data/models/barang_model.dart';
 import 'package:gstok/presentation/screens/responsive_layout.dart';
 import 'package:provider/provider.dart';
 import '../providers/barang_provider.dart';
@@ -58,7 +59,10 @@ class DashboardScreen extends StatelessWidget {
         children: [
           _buildWelcomeCard(context, Provider.of<AuthProvider>(context)),
           SizedBox(height: 24),
-
+          // 🚨 SECTION STOK MENIPIS
+          if (barangProvider.hasCriticalStock)
+            _buildCriticalStockSection(barangProvider, context),
+          if (barangProvider.hasCriticalStock) SizedBox(height: 24),
           _buildChartSection(transaksiProvider, context),
           SizedBox(height: 24),
 
@@ -70,6 +74,287 @@ class DashboardScreen extends StatelessWidget {
             transaksiKeluar,
           ),
           SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // 🚨 WIDGET BARU: Section Stok Menipis
+  Widget _buildCriticalStockSection(
+    BarangProvider barangProvider,
+    BuildContext context,
+  ) {
+    final criticalItems = barangProvider.criticalStockItems;
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 16 : 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header dengan icon warning
+              Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Stok Perlu Perhatian',
+                    style: TextStyle(
+                      fontSize: ResponsiveLayout.isMobile(context) ? 16 : 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${criticalItems.length}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+
+              // List barang stok kritis (maksimal 3 item)
+              Column(
+                children: criticalItems
+                    .take(3)
+                    .map(
+                      (barang) => _buildCriticalStockItem(
+                        barang,
+                        barangProvider,
+                        context,
+                      ),
+                    )
+                    .toList(),
+              ),
+
+              // Tampilkan "Lihat Semua" jika lebih dari 3 item
+              if (criticalItems.length > 3)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      // Bisa navigate ke halaman barang dengan filter stok kritis
+                      _showAllCriticalItems(context, barangProvider);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Lihat ${criticalItems.length - 3} item lainnya',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 12,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 🚨 WIDGET BARU: Item stok kritis
+  Widget _buildCriticalStockItem(
+    BarangModel barang,
+    BarangProvider barangProvider,
+    BuildContext context,
+  ) {
+    final statusColor = barangProvider.getStockStatusColor(barang);
+    final statusText = barangProvider.getStockStatus(barang);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          // Status Indicator
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          SizedBox(width: 12),
+
+          // Item Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  barang.nama,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: ResponsiveLayout.isMobile(context) ? 14 : 15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // Stock Info
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: ResponsiveLayout.isMobile(context) ? 10 : 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🚨 METHOD BARU: Dialog untuk lihat semua stok kritis
+  void _showAllCriticalItems(
+    BuildContext context,
+    BarangProvider barangProvider,
+  ) {
+    final criticalItems = barangProvider.criticalStockItems;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Semua Stok Kritis'),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${criticalItems.length}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: criticalItems.length,
+            itemBuilder: (context, index) => Container(
+              margin: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    criticalItems[index].stok <= 0
+                        ? Icons.error_outline
+                        : Icons.warning_amber,
+                    color: barangProvider.getStockStatusColor(
+                      criticalItems[index],
+                    ),
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          criticalItems[index].nama,
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: barangProvider
+                          .getStockStatusColor(criticalItems[index])
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${barangProvider.getStockStatus(criticalItems[index])} • ${criticalItems[index].stok}',
+                      style: TextStyle(
+                        color: barangProvider.getStockStatusColor(
+                          criticalItems[index],
+                        ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup', style: TextStyle(color: AppColors.primary)),
+          ),
         ],
       ),
     );

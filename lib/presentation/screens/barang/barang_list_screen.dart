@@ -261,9 +261,11 @@ class _BarangListScreenState extends State<BarangListScreen> {
                                         12,
                                         14,
                                       ),
-                                      color: barang.stok > 10
+                                      color: barang.stok > 5
                                           ? AppColors.success
-                                          : AppColors.warning,
+                                          : barang.stok > 0
+                                          ? AppColors.warning
+                                          : AppColors.error,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

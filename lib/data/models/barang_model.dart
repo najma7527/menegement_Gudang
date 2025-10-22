@@ -77,4 +77,6 @@ class BarangModel extends BarangEntity {
 
   @override
   int get hashCode => id.hashCode;
+
+  get kategoriId => null;
 }

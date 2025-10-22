@@ -70,9 +70,7 @@ class KatagoriProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Pastikan kategori memiliki user ID yang benar
-      final katagoriWithUserId = katagori.copyWith(UserId: _currentUserId);
-      await _katagoriRepository.addKatagori(katagoriWithUserId);
+      await _katagoriRepository.addKatagori(katagori);
       await loadKatagori(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
@@ -136,8 +134,4 @@ class KatagoriProvider with ChangeNotifier {
     }
     notifyListeners();
   }
-}
-
-extension on KatagoriModel {
-  copyWith({int? UserId}) {}
 }

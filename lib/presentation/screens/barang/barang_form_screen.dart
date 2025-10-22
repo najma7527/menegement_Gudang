@@ -247,69 +247,6 @@ class _BarangFormScreenState extends State<BarangFormScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  // Informasi Authentication Status (BARU)
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(12),
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.grey100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.grey300),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              authProvider.isAuthenticated
-                                  ? Icons.verified_user
-                                  : Icons.warning,
-                              size: 16,
-                              color: authProvider.isAuthenticated
-                                  ? AppColors.success
-                                  : AppColors.warning,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              authProvider.isAuthenticated
-                                  ? 'User Terautentikasi'
-                                  : 'User Tidak Terautentikasi',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: authProvider.isAuthenticated
-                                    ? AppColors.success
-                                    : AppColors.warning,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (authProvider.currentUser != null) ...[
-                          SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                size: 12,
-                                color: AppColors.grey600,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'User ID: ${authProvider.currentUser!.id}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.grey600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
                   // Nama Barang Field
                   Container(
                     decoration: BoxDecoration(

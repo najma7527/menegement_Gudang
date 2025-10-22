@@ -174,4 +174,30 @@ class BarangProvider with ChangeNotifier {
       return null;
     }
   }
+
+  List<BarangModel> get criticalStockItems {
+    return _barangList.where((barang) => barang.stok <= 5).toList();
+  }
+
+  // 🚨 METHOD BARU: Cek apakah ada stok kritis
+  bool get hasCriticalStock => criticalStockItems.isNotEmpty;
+
+  // 🚨 METHOD BARU: Hitung jumlah barang stok kritis
+  int get criticalStockCount => criticalStockItems.length;
+
+  // 🚨 METHOD BARU: Ambil status stok untuk barang tertentu
+  String getStockStatus(BarangModel barang) {
+    if (barang.stok <= 0) return 'HABIS';
+    if (barang.stok <= 5) return 'MENIPIS';
+    return 'AMAN';
+  }
+
+  // 🚨 METHOD BARU: Ambil color status untuk barang tertentu
+  Color getStockStatusColor(BarangModel barang) {
+    if (barang.stok <= 0) return Colors.red;
+    if (barang.stok <= 5) return Colors.orange;
+    return Colors.green;
+  }
+
+  getKategoriById(kategoriId) {}
 }
