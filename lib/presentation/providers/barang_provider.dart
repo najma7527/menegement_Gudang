@@ -9,10 +9,27 @@ class BarangProvider with ChangeNotifier {
   List<BarangModel> _barangList = [];
   bool _isLoading = false;
   String? _error;
+  int? _currentUserId;
 
   List<BarangModel> get barangList => _barangList;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  // 🔹 RESET METHOD
+  void reset() {
+    _barangList = [];
+    _isLoading = false;
+    _error = null;
+    _currentUserId = null;
+    notifyListeners();
+    print('🔄 BarangProvider di-reset');
+  }
+
+  // Set user ID saat provider diinisialisasi
+  void setUserId(int? userId) {
+    _currentUserId = userId;
+    print('👤 User ID diset di BarangProvider: $userId');
+  }
 
   Future<void> loadBarang() async {
     _isLoading = true;
@@ -20,10 +37,24 @@ class BarangProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _barangList = await _barangRepository.getBarang();
+      if (_currentUserId != null) {
+        // Load barang hanya untuk user ini
+        _barangList = await _barangRepository.getBarangByUserId(
+          _currentUserId!,
+        );
+        print(
+          '📦 Loaded ${_barangList.length} barang untuk user $_currentUserId',
+        );
+      } else {
+        // Fallback jika user ID belum diset
+        _barangList = await _barangRepository.getBarang();
+        print('📦 Loaded ${_barangList.length} barang (tanpa user filter)');
+      }
       _error = null;
     } catch (e) {
       _error = e.toString();
+      _barangList = [];
+      print('❌ Error load barang: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -35,8 +66,10 @@ class BarangProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _barangRepository.addBarang(barang);
-      await loadBarang();
+      // Pastikan barang memiliki user ID yang benar
+      final barangWithUserId = barang.copyWith(userId: _currentUserId);
+      await _barangRepository.addBarang(barangWithUserId);
+      await loadBarang(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -53,7 +86,7 @@ class BarangProvider with ChangeNotifier {
 
     try {
       await _barangRepository.updateBarang(id, barang);
-      await loadBarang();
+      await loadBarang(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -88,12 +121,14 @@ class BarangProvider with ChangeNotifier {
           stokBaru,
         );
       }
+
       // Buat model baru dengan stok yang sudah diupdate
       final updatedBarang = barang.copyWith(stok: stokBaru);
 
       // Simpan ke backend lewat repository
       await _barangRepository.updateBarang(barangId, updatedBarang);
 
+      // Update local state
       final index = _barangList.indexWhere((b) => b.id == barangId);
       if (index != -1) {
         _barangList[index] = updatedBarang;
@@ -116,7 +151,7 @@ class BarangProvider with ChangeNotifier {
 
     try {
       await _barangRepository.deleteBarang(id);
-      await loadBarang();
+      await loadBarang(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();

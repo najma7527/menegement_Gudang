@@ -26,6 +26,29 @@ class TransaksiRepository {
     }
   }
 
+  // TAMBAH: Method untuk get transaksi by user ID
+  Future<List<TransaksiModel>> getTransaksiByUserId(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/transaksi?user_id=$userId')
+      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+
+      print('GET TRANSAKSI BY USER STATUS: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => TransaksiModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Gagal memuat data transaksi: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is http.ClientException) {
+        throw Exception('Koneksi gagal. Periksa koneksi internet dan server.');
+      }
+      rethrow;
+    }
+  }
+
   Future<TransaksiModel> getTransaksiById(int id) async {
     try {
       final response = await http.get(

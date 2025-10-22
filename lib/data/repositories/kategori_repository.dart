@@ -26,6 +26,29 @@ class KatagoriRepository {
     }
   }
 
+  // TAMBAH: Method untuk get kategori by user ID
+  Future<List<KatagoriModel>> getKatagoriByUserId(int userId) async {
+    try {
+      final response = await http
+          .get(Uri.parse('${AppConfig.baseUrl}/katagori?user_id=$userId'))
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
+
+      print('GET KATEGORI BY USER STATUS: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => KatagoriModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Gagal memuat data kategori: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is http.ClientException) {
+        throw Exception('Koneksi gagal. Periksa koneksi internet dan server.');
+      }
+      rethrow;
+    }
+  }
+
   Future<KatagoriModel> getKatagoriById(int id) async {
     try {
       final response = await http

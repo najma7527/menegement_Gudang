@@ -371,6 +371,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  // 🔹 DIPERBARUI: Tambahkan parameter context ke logout
   void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
     showDialog(
       context: context,
@@ -385,7 +386,8 @@ class ProfilePage extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                authProvider.logout();
+                // 🔹 DIPERBARUI: Panggil logout dengan context
+                authProvider.logout(context);
                 Navigator.of(context).pushReplacementNamed('/login');
               },
               style: ElevatedButton.styleFrom(

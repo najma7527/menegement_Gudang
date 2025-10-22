@@ -368,7 +368,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  // Registration Handler
+  // Registration Handler - DIPERBARUI dengan parameter context
   Future<void> _registerUser(
     BuildContext context,
     AuthProvider authProvider,
@@ -383,6 +383,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _nameController.text.trim(),
         _emailController.text.trim().toLowerCase(),
         _passwordController.text,
+        context, // 🔹 TAMBAHKAN PARAMETER CONTEXT
       );
 
       if (success && mounted) {

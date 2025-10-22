@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../data/repositories/auth_repository.dart';
 import '../../data/models/user_model.dart';
+import 'provider_manager.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _authRepository = AuthRepository();
@@ -30,7 +32,22 @@ class AuthProvider with ChangeNotifier {
 
   get html => null;
 
-  Future<bool> login(String email, String password) async {
+  // 🔹 RESET METHOD
+  void reset() {
+    _currentUser = null;
+    _isLoading = false;
+    _error = null;
+    _isAuthenticated = false;
+    _token = null;
+    notifyListeners();
+    print('🔄 AuthProvider di-reset');
+  }
+
+  Future<bool> login(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     _isLoading = true;
     notifyListeners();
 
@@ -38,6 +55,16 @@ class AuthProvider with ChangeNotifier {
       _currentUser = await _authRepository.login(email, password);
       _token = _currentUser?.token;
       _isAuthenticated = true;
+
+      if (_currentUser?.id != null) {
+        ProviderManager.setUserIdForAllProviders(context, _currentUser!.id!);
+
+        // Tunda load data sampai setelah build selesai
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ProviderManager.loadAllData(context);
+        });
+      }
+
       return true;
     } catch (e) {
       print("Login error: $e");
@@ -50,7 +77,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(
+    String name,
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     _isLoading = true;
     notifyListeners();
 
@@ -58,6 +90,16 @@ class AuthProvider with ChangeNotifier {
       _currentUser = await _authRepository.register(name, email, password);
       _token = _currentUser?.token;
       _isAuthenticated = true;
+
+       if (_currentUser?.id != null) {
+      ProviderManager.setUserIdForAllProviders(context, _currentUser!.id!);
+      
+      // Tunda load data sampai setelah build selesai
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ProviderManager.loadAllData(context);
+      });
+    }
+
       return true;
     } catch (e) {
       print("Register error: $e");
@@ -70,11 +112,15 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  void logout() {
-    _currentUser = null;
-    _isAuthenticated = false;
-    _token = null;
-    notifyListeners();
+  // 🔹 UPDATE LOGOUT METHOD
+  void logout(BuildContext context) {
+    // Reset semua provider
+    ProviderManager.resetAllProviders(context);
+
+    // Reset auth provider
+    reset();
+
+    print('✅ Logout berhasil, semua provider di-reset');
   }
 
   void clearError() {
@@ -188,7 +234,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       } else if (response.statusCode == 401) {
         print("❌ Token tidak valid (401)");
-        logout();
+        logout(navigatorKey.currentContext!);
         return false;
       } else {
         print("❌ Upload failed: ${response.statusCode}");
@@ -286,4 +332,11 @@ class AuthProvider with ChangeNotifier {
     _currentUser = newUserData;
     notifyListeners();
   }
+
+  // Di dalam auth_provider.dart - tambahkan getter ini
+  int? get userId => _currentUser?.id;
+
+  // Global key untuk navigator (tambahkan di bagian atas file)
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 }

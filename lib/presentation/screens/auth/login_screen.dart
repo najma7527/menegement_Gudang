@@ -323,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // Login Handler
+  // Login Handler - DIPERBARUI dengan parameter context
   Future<void> _loginUser(
     BuildContext context,
     AuthProvider authProvider,
@@ -337,6 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final success = await authProvider.login(
         _emailController.text.trim().toLowerCase(),
         _passwordController.text,
+        context, // 🔹 TAMBAHKAN PARAMETER CONTEXT
       );
 
       if (success && mounted) {

@@ -8,10 +8,27 @@ class TransaksiProvider with ChangeNotifier {
   List<TransaksiModel> _transaksiList = [];
   bool _isLoading = false;
   String? _error;
+  int? _currentUserId;
 
   List<TransaksiModel> get transaksiList => _transaksiList;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  // 🔹 RESET METHOD
+  void reset() {
+    _transaksiList = [];
+    _isLoading = false;
+    _error = null;
+    _currentUserId = null;
+    notifyListeners();
+    print('🔄 TransaksiProvider di-reset');
+  }
+
+  // Set user ID saat provider diinisialisasi
+  void setUserId(int? userId) {
+    _currentUserId = userId;
+    print('👤 User ID diset di TransaksiProvider: $userId');
+  }
 
   Future<void> loadTransaksi() async {
     _isLoading = true;
@@ -19,18 +36,32 @@ class TransaksiProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _transaksiList = await _transaksiRepository.getTransaksi();
+      if (_currentUserId != null) {
+        // Load transaksi hanya untuk user ini
+        _transaksiList = await _transaksiRepository.getTransaksiByUserId(
+          _currentUserId!,
+        );
+        print(
+          '💰 Loaded ${_transaksiList.length} transaksi untuk user $_currentUserId',
+        );
+      } else {
+        // Fallback jika user ID belum diset
+        _transaksiList = await _transaksiRepository.getTransaksi();
+        print(
+          '💰 Loaded ${_transaksiList.length} transaksi (tanpa user filter)',
+        );
+      }
       _error = null;
     } catch (e) {
       _error = e.toString();
       _transaksiList = [];
+      print('❌ Error load transaksi: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // UBAH: Tambahkan parameter BarangProvider untuk update stok
   Future<bool> addTransaksi(
     TransaksiModel transaksi, {
     required Function updateStokCallback,

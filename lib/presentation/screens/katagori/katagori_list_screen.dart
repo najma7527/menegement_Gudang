@@ -18,12 +18,19 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
   @override
   void initState() {
     super.initState();
+    _loadKategori();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadKategori() async {
     final kategoriProvider = Provider.of<KatagoriProvider>(
       context,
       listen: false,
     );
-    _filteredKategori = kategoriProvider.filteredKatagoriList;
-    _searchController.addListener(_onSearchChanged);
+    await kategoriProvider.loadKatagori(); // Pastikan method ini ada di provider
+    setState(() {
+      _filteredKategori = kategoriProvider.katagoriList;
+    });
   }
 
   void _onSearchChanged() {
@@ -72,7 +79,7 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
       ),
       body: Column(
         children: [
-          // Search Bar - sama seperti BarangListScreen
+          // Search Bar
           Padding(
             padding: EdgeInsets.all(ResponsiveLayout.getPadding(context)),
             child: Container(
@@ -111,47 +118,49 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : _filteredKategori.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.category,
-                          size: ResponsiveLayout.isMobile(context) ? 48 : 64,
-                          color: AppColors.grey400,
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.category,
+                              size: ResponsiveLayout.isMobile(context) ? 48 : 64,
+                              color: AppColors.grey400,
+                            ),
+                            SizedBox(
+                              height: ResponsiveLayout.isMobile(context) ? 12 : 16,
+                            ),
+                            Text(
+                              'Tidak ada kategori',
+                              style: TextStyle(
+                                fontSize: ResponsiveLayout.isMobile(context)
+                                    ? 16
+                                    : 18,
+                                color: AppColors.grey600,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(
-                          height: ResponsiveLayout.isMobile(context) ? 12 : 16,
-                        ),
-                        Text(
-                          'Tidak ada kategori',
-                          style: TextStyle(
-                            fontSize: ResponsiveLayout.isMobile(context)
-                                ? 16
-                                : 18,
-                            color: AppColors.grey600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _filteredKategori.length,
-                    itemBuilder: (context, index) {
-                      final kategori = _filteredKategori[index];
-                      return _buildKategoriCard(
-                        context,
-                        kategori,
-                        kategoriProvider,
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        itemCount: _filteredKategori.length,
+                        itemBuilder: (context, index) {
+                          final kategori = _filteredKategori[index];
+                          return _buildKategoriCard(
+                            context,
+                            kategori,
+                            kategoriProvider,
+                          );
+                        },
+                      ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/kategori/form');
+        onPressed: () async {
+          await Navigator.pushNamed(context, '/kategori/form');
+          // Reload data setelah kembali dari form
+          _loadKategori();
         },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -171,114 +180,128 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
   ) {
     final Color cardColor = _getColorFromString(kategori.warna);
 
-    return Card(
-      margin: EdgeInsets.symmetric(
-        horizontal: ResponsiveLayout.getPadding(context),
-        vertical: 4,
-      ),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // Navigate to detail screen
-          Navigator.pushNamed(context, '/kategori/detail', arguments: kategori);
-        },
-        child: ListTile(
-          leading: Container(
-            width: ResponsiveLayout.isMobile(context) ? 40 : 50,
-            height: ResponsiveLayout.isMobile(context) ? 40 : 50,
-            decoration: BoxDecoration(
-              color: cardColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+    return InkWell(
+      onTap: () {
+        Navigator.pushNamed(context, '/kategori/detail', arguments: kategori);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Card(
+        margin: EdgeInsets.symmetric(
+          horizontal: ResponsiveLayout.getPadding(context),
+          vertical: 4,
+        ),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                cardColor.withOpacity(0.05),
+                cardColor.withOpacity(0.02),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Icon(
-              Icons.category,
-              color: cardColor,
-              size: ResponsiveLayout.isMobile(context) ? 18 : 22,
-            ),
+            borderRadius: BorderRadius.circular(16),
           ),
-          title: Text(
-            kategori.nama,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: ResponsiveLayout.isMobile(context) ? 14 : 16,
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Deskripsi: ${kategori.deskripsi?.isNotEmpty == true ? kategori.deskripsi! : 'Tidak ada deskripsi'}',
-                style: TextStyle(
-                  fontSize: ResponsiveLayout.isMobile(context) ? 10 : 12,
-                ),
+          child: ListTile(
+            leading: Container(
+              width: ResponsiveLayout.isMobile(context) ? 40 : 50,
+              height: ResponsiveLayout.isMobile(context) ? 40 : 50,
+              decoration: BoxDecoration(
+                color: cardColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
-          ),
-          trailing: PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: cardColor,
-              size: ResponsiveLayout.isMobile(context) ? 20 : 24,
+              child: Icon(
+                Icons.category,
+                color: cardColor,
+                size: ResponsiveLayout.isMobile(context) ? 18 : 22,
+              ),
             ),
-            onSelected: (value) {
-              if (value == 'edit') {
-                Navigator.pushNamed(
-                  context,
-                  '/kategori/form',
-                  arguments: kategori,
-                );
-              } else if (value == 'delete') {
-                _showDeleteDialog(context, kategori, kategoriProvider);
-              } else if (value == 'detail') {
-                Navigator.pushNamed(
-                  context,
-                  '/kategori/detail',
-                  arguments: kategori,
-                );
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.edit,
-                      color: AppColors.primary,
-                      size: ResponsiveLayout.isMobile(context) ? 18 : 20,
-                    ),
-                    SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
-                    Text(
-                      'Edit',
-                      style: TextStyle(
-                        fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
+            title: Text(
+              kategori.nama,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: ResponsiveLayout.isMobile(context) ? 14 : 16,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Deskripsi: ${kategori.deskripsi?.isNotEmpty == true ? kategori.deskripsi! : 'Tidak ada deskripsi'}',
+                  style: TextStyle(
+                    fontSize: ResponsiveLayout.isMobile(context) ? 10 : 12,
+                  ),
+                ),
+              ],
+            ),
+            trailing: PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert,
+                color: cardColor,
+                size: ResponsiveLayout.isMobile(context) ? 20 : 24,
+              ),
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  await Navigator.pushNamed(
+                    context,
+                    '/kategori/form',
+                    arguments: kategori,
+                  );
+                  // Reload data setelah edit
+                  _loadKategori();
+                } else if (value == 'delete') {
+                  _showDeleteDialog(context, kategori, kategoriProvider);
+                } else if (value == 'detail') {
+                  Navigator.pushNamed(
+                    context,
+                    '/kategori/detail',
+                    arguments: kategori,
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.edit,
+                        color: AppColors.primary,
+                        size: ResponsiveLayout.isMobile(context) ? 18 : 20,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delete,
-                      color: AppColors.error,
-                      size: ResponsiveLayout.isMobile(context) ? 18 : 20,
-                    ),
-                    SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
-                    Text(
-                      'Hapus',
-                      style: TextStyle(
-                        fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
+                      SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
+                      Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete,
+                        color: AppColors.error,
+                        size: ResponsiveLayout.isMobile(context) ? 18 : 20,
+                      ),
+                      SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
+                      Text(
+                        'Hapus',
+                        style: TextStyle(
+                          fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -336,6 +359,8 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
                 kategori.id!,
               );
               if (success) {
+                // Update filtered list setelah delete
+                _loadKategori();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Kategori berhasil dihapus'),

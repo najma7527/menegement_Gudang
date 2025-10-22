@@ -41,6 +41,46 @@ class BarangRepository {
     }
   }
 
+  // TAMBAH: Method untuk get barang by user ID
+  Future<List<BarangModel>> getBarangByUserId(int userId) async {
+    try {
+      final response = await http
+          .get(Uri.parse('${AppConfig.baseUrl}/barang?user_id=$userId'))
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
+
+      print('GET BARANG BY USER STATUS: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final List<BarangModel> barangList = data
+            .map((json) => BarangModel.fromJson(json))
+            .toList();
+
+        // Hapus duplikat berdasarkan ID
+        final Map<int, BarangModel> uniqueBarangMap = {};
+        for (final barang in barangList) {
+          if (barang.id != null) {
+            uniqueBarangMap[barang.id!] = barang;
+          }
+        }
+
+        final uniqueBarangList = uniqueBarangMap.values.toList();
+        print(
+          'Loaded ${uniqueBarangList.length} unique barang items for user $userId',
+        );
+
+        return uniqueBarangList;
+      } else {
+        throw Exception('Gagal memuat data barang: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is http.ClientException) {
+        throw Exception('Koneksi gagal. Periksa koneksi internet dan server.');
+      }
+      rethrow;
+    }
+  }
+
   Future<BarangModel> getBarangById(int id) async {
     try {
       final response = await http

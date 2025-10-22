@@ -18,11 +18,23 @@ class _BarangListScreenState extends State<BarangListScreen> {
   @override
   void initState() {
     super.initState();
-    _filteredBarang = Provider.of<BarangProvider>(
+    _loadData();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadData() async {
+    final barangProvider = Provider.of<BarangProvider>(context, listen: false);
+    final kategoriProvider = Provider.of<KatagoriProvider>(
       context,
       listen: false,
-    ).barangList;
-    _searchController.addListener(_onSearchChanged);
+    );
+
+    await barangProvider.loadBarang();
+    await kategoriProvider.loadKatagori();
+
+    setState(() {
+      _filteredBarang = barangProvider.barangList;
+    });
   }
 
   void _onSearchChanged() {
@@ -152,189 +164,206 @@ class _BarangListScreenState extends State<BarangListScreen> {
                         ),
                       );
 
-                      return Card(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: ResponsiveLayout.getPadding(context),
-                          vertical: 4,
-                        ),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            _navigateToDetailBarang(context, barang, kategori);
-                          },
-                          child: ListTile(
-                            leading: Container(
-                              width: ResponsiveLayout.getFontSize(
-                                context,
-                                40,
-                                45,
-                                50,
+                      final Color cardColor = _getKategoriColor(kategori);
+
+                      return InkWell(
+                        onTap: () {
+                          _navigateToDetailBarang(context, barang, kategori);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Card(
+                          margin: EdgeInsets.symmetric(
+                            horizontal: ResponsiveLayout.getPadding(context),
+                            vertical: 4,
+                          ),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  cardColor.withOpacity(0.05),
+                                  cardColor.withOpacity(0.02),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              height: ResponsiveLayout.getFontSize(
-                                context,
-                                40,
-                                45,
-                                50,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getKategoriColor(
-                                  kategori,
-                                ).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.inventory_2,
-                                color: _getKategoriColor(kategori),
-                                size: ResponsiveLayout.getFontSize(
-                                  context,
-                                  18,
-                                  20,
-                                  22,
-                                ),
-                              ),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            title: Text(
-                              barang.nama,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: ResponsiveLayout.getFontSize(
+                            child: ListTile(
+                              leading: Container(
+                                width: ResponsiveLayout.getFontSize(
                                   context,
-                                  14,
-                                  16,
-                                  18,
+                                  40,
+                                  45,
+                                  50,
                                 ),
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Kategori: ${kategori.nama}',
-                                  style: TextStyle(
-                                    fontSize: ResponsiveLayout.getFontSize(
-                                      context,
-                                      10,
-                                      12,
-                                      14,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: ResponsiveLayout.getPadding(context),
-                                ),
-                                Text(
-                                  'Stok: ${barang.stok} unit',
-                                  style: TextStyle(
-                                    fontSize: ResponsiveLayout.getFontSize(
-                                      context,
-                                      10,
-                                      12,
-                                      14,
-                                    ),
-                                    color: barang.stok > 10
-                                        ? AppColors.success
-                                        : AppColors.warning,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            trailing: PopupMenuButton<String>(
-                              icon: Icon(
-                                Icons.more_vert,
-                                color: _getKategoriColor(kategori),
-                                size: ResponsiveLayout.getFontSize(
+                                height: ResponsiveLayout.getFontSize(
                                   context,
-                                  20,
-                                  22,
-                                  24,
+                                  40,
+                                  45,
+                                  50,
                                 ),
-                              ),
-                              onSelected: (value) {
-                                if (value == 'edit') {
-                                  Navigator.pushNamed(
+                                decoration: BoxDecoration(
+                                  color: cardColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.inventory_2,
+                                  color: cardColor,
+                                  size: ResponsiveLayout.getFontSize(
                                     context,
-                                    '/barang/form',
-                                    arguments: barang,
-                                  );
-                                } else if (value == 'delete') {
-                                  _showDeleteDialog(context, barang);
-                                }
-                              },
-                              itemBuilder: (BuildContext context) => [
-                                PopupMenuItem<String>(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.edit,
-                                        color: AppColors.primary,
-                                        size: ResponsiveLayout.getFontSize(
-                                          context,
-                                          18,
-                                          20,
-                                          22,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: ResponsiveLayout.getPadding(
-                                          context,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Edit',
-                                        style: TextStyle(
-                                          fontSize:
-                                              ResponsiveLayout.getFontSize(
-                                                context,
-                                                12,
-                                                14,
-                                                16,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
+                                    18,
+                                    20,
+                                    22,
                                   ),
                                 ),
-                                PopupMenuItem<String>(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.delete,
-                                        color: AppColors.error,
-                                        size: ResponsiveLayout.getFontSize(
-                                          context,
-                                          18,
-                                          20,
-                                          22,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: ResponsiveLayout.getPadding(
-                                          context,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Hapus',
-                                        style: TextStyle(
-                                          fontSize:
-                                              ResponsiveLayout.getFontSize(
-                                                context,
-                                                12,
-                                                14,
-                                                16,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
+                              ),
+                              title: Text(
+                                barang.nama,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: ResponsiveLayout.getFontSize(
+                                    context,
+                                    14,
+                                    16,
+                                    18,
                                   ),
                                 ),
-                              ],
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Kategori: ${kategori.nama}',
+                                    style: TextStyle(
+                                      fontSize: ResponsiveLayout.getFontSize(
+                                        context,
+                                        10,
+                                        12,
+                                        14,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: ResponsiveLayout.getPadding(
+                                      context,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Stok: ${barang.stok} unit',
+                                    style: TextStyle(
+                                      fontSize: ResponsiveLayout.getFontSize(
+                                        context,
+                                        10,
+                                        12,
+                                        14,
+                                      ),
+                                      color: barang.stok > 10
+                                          ? AppColors.success
+                                          : AppColors.warning,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  color: cardColor,
+                                  size: ResponsiveLayout.getFontSize(
+                                    context,
+                                    20,
+                                    22,
+                                    24,
+                                  ),
+                                ),
+                                onSelected: (value) async {
+                                  if (value == 'edit') {
+                                    await Navigator.pushNamed(
+                                      context,
+                                      '/barang/form',
+                                      arguments: barang,
+                                    );
+                                    // Reload data setelah edit
+                                    _loadData();
+                                  } else if (value == 'delete') {
+                                    _showDeleteDialog(context, barang);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.edit,
+                                          color: AppColors.primary,
+                                          size: ResponsiveLayout.getFontSize(
+                                            context,
+                                            18,
+                                            20,
+                                            22,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: ResponsiveLayout.getPadding(
+                                            context,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Edit',
+                                          style: TextStyle(
+                                            fontSize:
+                                                ResponsiveLayout.getFontSize(
+                                                  context,
+                                                  12,
+                                                  14,
+                                                  16,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete,
+                                          color: AppColors.error,
+                                          size: ResponsiveLayout.getFontSize(
+                                            context,
+                                            18,
+                                            20,
+                                            22,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: ResponsiveLayout.getPadding(
+                                            context,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Hapus',
+                                          style: TextStyle(
+                                            fontSize:
+                                                ResponsiveLayout.getFontSize(
+                                                  context,
+                                                  12,
+                                                  14,
+                                                  16,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -345,8 +374,10 @@ class _BarangListScreenState extends State<BarangListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/barang/form');
+        onPressed: () async {
+          await Navigator.pushNamed(context, '/barang/form');
+          // Reload data setelah kembali dari form
+          _loadData();
         },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -412,12 +443,14 @@ class _BarangListScreenState extends State<BarangListScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              Provider.of<BarangProvider>(
+            onPressed: () async {
+              Navigator.pop(context);
+              await Provider.of<BarangProvider>(
                 context,
                 listen: false,
               ).deleteBarang(barang.id!);
-              Navigator.pop(context);
+              // Reload data setelah delete
+              _loadData();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('Barang berhasil dihapus'),

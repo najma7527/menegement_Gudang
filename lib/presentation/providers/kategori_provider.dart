@@ -9,11 +9,29 @@ class KatagoriProvider with ChangeNotifier {
   List<KatagoriModel> _filteredKatagoriList = [];
   bool _isLoading = false;
   String? _error;
+  int? _currentUserId;
 
   List<KatagoriModel> get katagoriList => _katagoriList;
   List<KatagoriModel> get filteredKatagoriList => _filteredKatagoriList;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  // 🔹 RESET METHOD
+  void reset() {
+    _katagoriList = [];
+    _filteredKatagoriList = [];
+    _isLoading = false;
+    _error = null;
+    _currentUserId = null;
+    notifyListeners();
+    print('🔄 KatagoriProvider di-reset');
+  }
+
+  // Set user ID saat provider diinisialisasi
+  void setUserId(int? userId) {
+    _currentUserId = userId;
+    print('👤 User ID diset di KatagoriProvider: $userId');
+  }
 
   Future<void> loadKatagori() async {
     _isLoading = true;
@@ -21,11 +39,26 @@ class KatagoriProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _katagoriList = await _katagoriRepository.getKatagori();
+      if (_currentUserId != null) {
+        // Load kategori hanya untuk user ini
+        _katagoriList = await _katagoriRepository.getKatagoriByUserId(
+          _currentUserId!,
+        );
+        print(
+          '📂 Loaded ${_katagoriList.length} kategori untuk user $_currentUserId',
+        );
+      } else {
+        // Fallback jika user ID belum diset
+        _katagoriList = await _katagoriRepository.getKatagori();
+        print('📂 Loaded ${_katagoriList.length} kategori (tanpa user filter)');
+      }
       _filteredKatagoriList = _katagoriList;
       _error = null;
     } catch (e) {
       _error = e.toString();
+      _katagoriList = [];
+      _filteredKatagoriList = [];
+      print('❌ Error load kategori: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -37,8 +70,10 @@ class KatagoriProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _katagoriRepository.addKatagori(katagori);
-      await loadKatagori();
+      // Pastikan kategori memiliki user ID yang benar
+      final katagoriWithUserId = katagori.copyWith(UserId: _currentUserId);
+      await _katagoriRepository.addKatagori(katagoriWithUserId);
+      await loadKatagori(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -55,7 +90,7 @@ class KatagoriProvider with ChangeNotifier {
 
     try {
       await _katagoriRepository.updateKatagori(id, katagori);
-      await loadKatagori();
+      await loadKatagori(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -72,7 +107,7 @@ class KatagoriProvider with ChangeNotifier {
 
     try {
       await _katagoriRepository.deleteKatagori(id);
-      await loadKatagori();
+      await loadKatagori(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -101,4 +136,8 @@ class KatagoriProvider with ChangeNotifier {
     }
     notifyListeners();
   }
+}
+
+extension on KatagoriModel {
+  copyWith({int? UserId}) {}
 }

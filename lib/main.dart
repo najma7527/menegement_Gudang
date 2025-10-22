@@ -4,6 +4,7 @@ import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/kategori_provider.dart';
 import 'presentation/providers/barang_provider.dart';
 import 'presentation/providers/transaksi_provider.dart';
+import 'presentation/providers/provider_manager.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/home_screen.dart';
@@ -20,12 +21,7 @@ import '../core/constants/app_colors.dart';
 import 'presentation/screens/profile_screen.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
-      child: MyApp(),
-    ),
-  );
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -38,7 +34,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => BarangProvider()),
         ChangeNotifierProvider(create: (context) => TransaksiProvider()),
       ],
-
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Inventory App',
@@ -90,7 +85,7 @@ class MyApp extends StatelessWidget {
             style: TextButton.styleFrom(foregroundColor: AppColors.primary),
           ),
         ),
-        initialRoute: '/login',
+        home: AppStartup(),
         routes: {
           '/login': (context) => LoginScreen(),
           '/register': (context) => RegisterScreen(),
@@ -108,6 +103,36 @@ class MyApp extends StatelessWidget {
           '/profile': (context) => ProfilePage(),
         },
       ),
+    );
+  }
+}
+
+class AppStartup extends StatefulWidget {
+  @override
+  _AppStartupState createState() => _AppStartupState();
+}
+
+class _AppStartupState extends State<AppStartup> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  void _initializeApp() async {
+    // Reset semua provider saat app start untuk pastikan state bersih
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ProviderManager.resetAllProviders(context);
+      print('🚀 App startup: Semua provider di-reset');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, child) {
+        return auth.isAuthenticated ? MainScreen() : LoginScreen();
+      },
     );
   }
 }
