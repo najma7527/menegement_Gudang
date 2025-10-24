@@ -35,7 +35,7 @@ class ProviderManager {
     );
 
     await Future.wait([
-      barangProvider.loadBarang(),
+      barangProvider.loadBarangByUser(),
       kategoriProvider.loadKatagori(),
       transaksiProvider.loadTransaksi(),
     ]);

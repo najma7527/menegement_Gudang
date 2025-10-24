@@ -63,9 +63,9 @@ class HelpScreen extends StatelessWidget {
               ),
               _buildFAQItem(
                 context: context,
-                question: 'Bagaimana mengubah informasi email dan?',
+                question: 'Bagaimana mengubah informasi nama dan email?',
                 answer:
-                    'mohon maaf, fitur ini belum tersedia di aplikasi GStok saat ini.',
+                    'Pergi ke menu "Edit Profil" → Edit Profil → Simpan perubahan',
               ),
 
               SizedBox(height: 32),

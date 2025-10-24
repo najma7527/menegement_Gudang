@@ -4,10 +4,20 @@ import '../models/barang_model.dart';
 import '../../core/constants/app_config.dart';
 
 class BarangRepository {
+  final String? token;
+
+  BarangRepository(this.token);
+
   Future<List<BarangModel>> getBarang() async {
     try {
       final response = await http
-          .get(Uri.parse('${AppConfig.baseUrl}/barang'))
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/barang'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
           .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       print('GET BARANG STATUS: ${response.statusCode}');
@@ -41,42 +51,70 @@ class BarangRepository {
     }
   }
 
-  // TAMBAH: Method untuk get barang by user ID
   Future<List<BarangModel>> getBarangByUserId(int userId) async {
     try {
-      final response = await http
-          .get(Uri.parse('${AppConfig.baseUrl}/barang?user_id=$userId'))
-          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      print('🚀 GET Barang for user: $userId');
+      print('🔐 Token: $token');
 
-      print('GET BARANG BY USER STATUS: ${response.statusCode}');
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/barang/user/$userId'),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(Duration(seconds: 10));
+
+      print('📦 Response status: ${response.statusCode}');
+      print('📦 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        final List<BarangModel> barangList = data
-            .map((json) => BarangModel.fromJson(json))
-            .toList();
+        final Map<String, dynamic> responseData = json.decode(response.body);
 
-        // Hapus duplikat berdasarkan ID
-        final Map<int, BarangModel> uniqueBarangMap = {};
-        for (final barang in barangList) {
-          if (barang.id != null) {
-            uniqueBarangMap[barang.id!] = barang;
-          }
+        // 🔥 PERBAIKAN: Handle berbagai format response
+        if (responseData.containsKey('data')) {
+          final List<dynamic> data = responseData['data'];
+          final result = data
+              .map((json) => BarangModel.fromJson(json))
+              .toList();
+          print(
+            '✅ Successfully loaded ${result.length} items for user $userId',
+          );
+          return result;
         }
-
-        final uniqueBarangList = uniqueBarangMap.values.toList();
-        print(
-          'Loaded ${uniqueBarangList.length} unique barang items for user $userId',
-        );
-
-        return uniqueBarangList;
+        // Jika response langsung array (tanpa wrapper)
+        else if (responseData is List) {
+          final result = (responseData as List)
+              .map((json) => BarangModel.fromJson(json))
+              .toList();
+          print(
+            '✅ Successfully loaded ${result.length} items for user $userId',
+          );
+          return result;
+        }
+        // Jika menggunakan format success/status
+        else if (responseData['success'] == true ||
+            responseData['status'] == 'success') {
+          final List<dynamic> data = responseData['data'] ?? [];
+          final result = data
+              .map((json) => BarangModel.fromJson(json))
+              .toList();
+          print(
+            '✅ Successfully loaded ${result.length} items for user $userId',
+          );
+          return result;
+        } else {
+          throw Exception(
+            'Format response tidak dikenali: ${responseData.keys}',
+          );
+        }
       } else {
-        throw Exception('Gagal memuat data barang: ${response.statusCode}');
+        throw Exception('Failed to load barang: ${response.statusCode}');
       }
     } catch (e) {
-      if (e is http.ClientException) {
-        throw Exception('Koneksi gagal. Periksa koneksi internet dan server.');
-      }
+      print('❌ Repository error: $e');
       rethrow;
     }
   }
@@ -84,7 +122,13 @@ class BarangRepository {
   Future<BarangModel> getBarangById(int id) async {
     try {
       final response = await http
-          .get(Uri.parse('${AppConfig.baseUrl}/barang/$id'))
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/barang/$id'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
           .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       if (response.statusCode == 200) {
@@ -106,7 +150,10 @@ class BarangRepository {
       final response = await http
           .post(
             Uri.parse('${AppConfig.baseUrl}/barang'),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
             body: json.encode(barang.toJson()),
           )
           .timeout(Duration(milliseconds: AppConfig.connectTimeout));
@@ -134,7 +181,10 @@ class BarangRepository {
       final response = await http
           .put(
             Uri.parse('${AppConfig.baseUrl}/barang/$id'),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
             body: json.encode(barang.toJson()),
           )
           .timeout(Duration(milliseconds: AppConfig.connectTimeout));
@@ -160,7 +210,10 @@ class BarangRepository {
       final response = await http
           .patch(
             Uri.parse('${AppConfig.baseUrl}/barang/$id/stok'),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
             body: json.encode({'stok': stokBaru}),
           )
           .timeout(Duration(milliseconds: AppConfig.connectTimeout));
@@ -183,7 +236,13 @@ class BarangRepository {
   Future<void> deleteBarang(int id) async {
     try {
       final response = await http
-          .delete(Uri.parse('${AppConfig.baseUrl}/barang/$id'))
+          .delete(
+            Uri.parse('${AppConfig.baseUrl}/barang/$id'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
           .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       if (response.statusCode != 200 && response.statusCode != 204) {

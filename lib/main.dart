@@ -30,9 +30,20 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
-        ChangeNotifierProvider(create: (context) => KatagoriProvider()),
-        ChangeNotifierProvider(create: (context) => BarangProvider()),
-        ChangeNotifierProvider(create: (context) => TransaksiProvider()),
+        ChangeNotifierProvider(
+          create: (context) => KatagoriProvider(
+            Provider.of<AuthProvider>(context, listen: false),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              BarangProvider(Provider.of<AuthProvider>(context, listen: false)),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => TransaksiProvider(
+            Provider.of<AuthProvider>(context, listen: false),
+          ),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

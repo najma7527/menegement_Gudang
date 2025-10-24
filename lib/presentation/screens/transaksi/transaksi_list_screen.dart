@@ -20,7 +20,7 @@ class _TransaksiListScreenState extends State<TransaksiListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BarangProvider>(context, listen: false).loadBarang();
+      Provider.of<BarangProvider>(context, listen: false).loadBarangByUser();
       Provider.of<TransaksiProvider>(context, listen: false).loadTransaksi();
     });
   }

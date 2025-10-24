@@ -59,14 +59,12 @@ class DashboardScreen extends StatelessWidget {
         children: [
           _buildWelcomeCard(context, Provider.of<AuthProvider>(context)),
           SizedBox(height: 24),
-          // 🚨 SECTION STOK MENIPIS
           if (barangProvider.hasCriticalStock)
             _buildCriticalStockSection(barangProvider, context),
           if (barangProvider.hasCriticalStock) SizedBox(height: 24),
           _buildChartSection(transaksiProvider, context),
           SizedBox(height: 24),
 
-          // RESPONSIVE: Grid layout untuk statistik
           _buildStatsGrid(
             totalBarang,
             totalKategori,
@@ -79,7 +77,6 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // 🚨 WIDGET BARU: Section Stok Menipis
   Widget _buildCriticalStockSection(
     BarangProvider barangProvider,
     BuildContext context,

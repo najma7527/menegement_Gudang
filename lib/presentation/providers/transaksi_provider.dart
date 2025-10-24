@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../data/repositories/transaksi_repository.dart';
 import '../../data/models/transaksi_model.dart';
+import 'auth_provider.dart';
 
 class TransaksiProvider with ChangeNotifier {
-  final TransaksiRepository _transaksiRepository = TransaksiRepository();
-
   List<TransaksiModel> _transaksiList = [];
   bool _isLoading = false;
   String? _error;
   int? _currentUserId;
+  final AuthProvider _authProvider;
+
+  TransaksiProvider(this._authProvider);
 
   List<TransaksiModel> get transaksiList => _transaksiList;
   bool get isLoading => _isLoading;
@@ -31,26 +33,25 @@ class TransaksiProvider with ChangeNotifier {
   }
 
   Future<void> loadTransaksi() async {
+    if (_currentUserId == null) {
+      print('❌ User ID belum diset, tidak dapat load transaksi');
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      if (_currentUserId != null) {
-        // Load transaksi hanya untuk user ini
-        _transaksiList = await _transaksiRepository.getTransaksiByUserId(
-          _currentUserId!,
-        );
-        print(
-          '💰 Loaded ${_transaksiList.length} transaksi untuk user $_currentUserId',
-        );
-      } else {
-        // Fallback jika user ID belum diset
-        _transaksiList = await _transaksiRepository.getTransaksi();
-        print(
-          '💰 Loaded ${_transaksiList.length} transaksi (tanpa user filter)',
-        );
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia. Silakan login kembali.');
       }
+
+      final repository = TransaksiRepository(token); 
+      _transaksiList = await repository.getTransaksiByUserId(_currentUserId!);
+      
+      print('💰 Loaded ${_transaksiList.length} transaksi untuk user $_currentUserId');
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -70,6 +71,13 @@ class TransaksiProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia. Silakan login kembali.');
+      }
+
+      print('📤 DATA TRANSAKSI KIRIM: ${transaksi.toJson()}');
+
       // Update stok barang terlebih dahulu
       final stokSuccess = await updateStokCallback(
         transaksi.barangId,
@@ -82,12 +90,16 @@ class TransaksiProvider with ChangeNotifier {
       }
 
       // Jika update stok berhasil, simpan transaksi
-      final newTransaksi = await _transaksiRepository.addTransaksi(transaksi);
+      final repository = TransaksiRepository(token); // 🔥 KIRIM TOKEN
+      final newTransaksi = await repository.addTransaksi(transaksi);
       _transaksiList.add(newTransaksi);
       _error = null;
+      
+      print('✅ Transaksi berhasil disimpan');
       return true;
     } catch (e) {
       _error = e.toString();
+      print('❌ Error add transaksi: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -100,10 +112,13 @@ class TransaksiProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final updatedTransaksi = await _transaksiRepository.updateTransaksi(
-        id,
-        transaksi,
-      );
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
+      }
+
+      final repository = TransaksiRepository(token); // 🔥 KIRIM TOKEN
+      final updatedTransaksi = await repository.updateTransaksi(id, transaksi);
       final index = _transaksiList.indexWhere((t) => t.id == id);
       if (index != -1) {
         _transaksiList[index] = updatedTransaksi;
@@ -112,6 +127,7 @@ class TransaksiProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _error = e.toString();
+      print('❌ Error update transaksi: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -124,12 +140,19 @@ class TransaksiProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _transaksiRepository.deleteTransaksi(id);
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
+      }
+
+      final repository = TransaksiRepository(token); // 🔥 KIRIM TOKEN
+      await repository.deleteTransaksi(id);
       _transaksiList.removeWhere((t) => t.id == id);
       _error = null;
       return true;
     } catch (e) {
       _error = e.toString();
+      print('❌ Error delete transaksi: $e');
       return false;
     } finally {
       _isLoading = false;

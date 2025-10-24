@@ -29,7 +29,7 @@ class _BarangListScreenState extends State<BarangListScreen> {
       listen: false,
     );
 
-    await barangProvider.loadBarang();
+    await barangProvider.loadBarangByUser();
     await kategoriProvider.loadKatagori();
 
     setState(() {

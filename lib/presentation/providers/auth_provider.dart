@@ -16,7 +16,7 @@ class AuthProvider with ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _error;
-  bool _isAuthenticated = false;
+  bool _isAuthenticated = false;  
 
   final String baseUrl = "http://127.0.0.1:8000";
 
@@ -91,14 +91,14 @@ class AuthProvider with ChangeNotifier {
       _token = _currentUser?.token;
       _isAuthenticated = true;
 
-       if (_currentUser?.id != null) {
-      ProviderManager.setUserIdForAllProviders(context, _currentUser!.id!);
-      
-      // Tunda load data sampai setelah build selesai
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ProviderManager.loadAllData(context);
-      });
-    }
+      if (_currentUser?.id != null) {
+        ProviderManager.setUserIdForAllProviders(context, _currentUser!.id!);
+
+        // Tunda load data sampai setelah build selesai
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ProviderManager.loadAllData(context);
+        });
+      }
 
       return true;
     } catch (e) {
@@ -278,42 +278,15 @@ class AuthProvider with ChangeNotifier {
       return null;
     }
 
-    String? photoUrl = _currentUser!.profilePhoto;
-
     // Jika sudah URL lengkap, gunakan langsung
-    if (photoUrl!.startsWith('http')) {
-      print('✅ URL foto sudah lengkap: $photoUrl');
-      return photoUrl;
+    if (_currentUser!.profilePhoto!.startsWith('http')) {
+      print('✅ URL foto sudah lengkap: ${_currentUser!.profilePhoto}');
+      return _currentUser!.profilePhoto;
     }
 
-    // Jika path relatif, gabungkan dengan baseUrl dengan benar
-    final base = baseUrl.replaceAll('/api', '');
-
-    // Normalisasi path
-    if (photoUrl.startsWith('storage/')) {
-      photoUrl = photoUrl.replaceFirst('storage/', '');
-    }
-    if (photoUrl.startsWith('/storage/')) {
-      photoUrl = photoUrl.replaceFirst('/storage/', '');
-    }
-    if (photoUrl.startsWith('/')) {
-      photoUrl = photoUrl.substring(1);
-    }
-
-    // Pastikan base URL memiliki http://
-    String normalizedBase = base;
-    if (!normalizedBase.startsWith('http://') &&
-        !normalizedBase.startsWith('https://')) {
-      normalizedBase = 'http://$normalizedBase';
-    }
-
-    // Bangun URL dengan benar
-    final fullUrl = '$normalizedBase/storage/$photoUrl'.replaceAll(
-      RegExp(r'/(?=/)|(?<=[^:])//'),
-      '/',
-    );
-    print('🔧 URL foto dibangun: $fullUrl');
-    return fullUrl;
+    // Jika bukan URL lengkap, kita tidak akan membangun karena seharusnya backend sudah mengembalikan URL lengkap
+    print('❌ URL foto tidak lengkap: ${_currentUser!.profilePhoto}');
+    return null;
   }
 
   // Method untuk check authentication status

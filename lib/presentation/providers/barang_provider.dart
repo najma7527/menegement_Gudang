@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:gstok/services/notification_service.dart';
 import '../../data/repositories/barang_repository.dart';
 import '../../data/models/barang_model.dart';
+import 'auth_provider.dart';
 
 class BarangProvider with ChangeNotifier {
-  final BarangRepository _barangRepository = BarangRepository();
-
   List<BarangModel> _barangList = [];
   bool _isLoading = false;
   String? _error;
   int? _currentUserId;
+  final AuthProvider _authProvider;
+
+  BarangProvider(this._authProvider);
 
   List<BarangModel> get barangList => _barangList;
   bool get isLoading => _isLoading;
@@ -31,29 +33,26 @@ class BarangProvider with ChangeNotifier {
     print('👤 User ID diset di BarangProvider: $userId');
   }
 
-  Future<void> loadBarang() async {
+  Future<void> loadBarangByUser() async {
+    if (_currentUserId == null) {
+      print('❌ User ID belum diset, tidak dapat load barang');
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      if (_currentUserId != null) {
-        // Load barang hanya untuk user ini
-        _barangList = await _barangRepository.getBarangByUserId(
-          _currentUserId!,
-        );
-        print(
-          '📦 Loaded ${_barangList.length} barang untuk user $_currentUserId',
-        );
-      } else {
-        // Fallback jika user ID belum diset
-        _barangList = await _barangRepository.getBarang();
-        print('📦 Loaded ${_barangList.length} barang (tanpa user filter)');
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
       }
-      _error = null;
+      final repository = BarangRepository(token);
+      _barangList = await repository.getBarangByUserId(_currentUserId!);
+      print('✅ Barang loaded: ${_barangList.length} items');
     } catch (e) {
       _error = e.toString();
-      _barangList = [];
       print('❌ Error load barang: $e');
     } finally {
       _isLoading = false;
@@ -66,10 +65,15 @@ class BarangProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
+      }
+      final repository = BarangRepository(token);
       // Pastikan barang memiliki user ID yang benar
       final barangWithUserId = barang.copyWith(userId: _currentUserId);
-      await _barangRepository.addBarang(barangWithUserId);
-      await loadBarang(); // Reload untuk mendapatkan data terbaru
+      await repository.addBarang(barangWithUserId);
+      await loadBarangByUser(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -85,8 +89,13 @@ class BarangProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _barangRepository.updateBarang(id, barang);
-      await loadBarang(); // Reload untuk mendapatkan data terbaru
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
+      }
+      final repository = BarangRepository(token);
+      await repository.updateBarang(id, barang);
+      await loadBarangByUser(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -125,8 +134,13 @@ class BarangProvider with ChangeNotifier {
       // Buat model baru dengan stok yang sudah diupdate
       final updatedBarang = barang.copyWith(stok: stokBaru);
 
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
+      }
+      final repository = BarangRepository(token);
       // Simpan ke backend lewat repository
-      await _barangRepository.updateBarang(barangId, updatedBarang);
+      await repository.updateBarang(barangId, updatedBarang);
 
       // Update local state
       final index = _barangList.indexWhere((b) => b.id == barangId);
@@ -150,8 +164,13 @@ class BarangProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _barangRepository.deleteBarang(id);
-      await loadBarang(); // Reload untuk mendapatkan data terbaru
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Token tidak tersedia');
+      }
+      final repository = BarangRepository(token);
+      await repository.deleteBarang(id);
+      await loadBarangByUser(); // Reload untuk mendapatkan data terbaru
       return true;
     } catch (e) {
       _error = e.toString();
@@ -179,20 +198,16 @@ class BarangProvider with ChangeNotifier {
     return _barangList.where((barang) => barang.stok <= 5).toList();
   }
 
-  // 🚨 METHOD BARU: Cek apakah ada stok kritis
   bool get hasCriticalStock => criticalStockItems.isNotEmpty;
 
-  // 🚨 METHOD BARU: Hitung jumlah barang stok kritis
   int get criticalStockCount => criticalStockItems.length;
 
-  // 🚨 METHOD BARU: Ambil status stok untuk barang tertentu
   String getStockStatus(BarangModel barang) {
     if (barang.stok <= 0) return 'HABIS';
     if (barang.stok <= 5) return 'MENIPIS';
     return 'AMAN';
   }
 
-  // 🚨 METHOD BARU: Ambil color status untuk barang tertentu
   Color getStockStatusColor(BarangModel barang) {
     if (barang.stok <= 0) return Colors.red;
     if (barang.stok <= 5) return Colors.orange;

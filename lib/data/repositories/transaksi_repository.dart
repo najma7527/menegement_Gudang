@@ -4,62 +4,107 @@ import '../models/transaksi_model.dart';
 import '../../core/constants/app_config.dart';
 
 class TransaksiRepository {
-  Future<List<TransaksiModel>> getTransaksi() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/transaksi')
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+  final String? token;
 
-      print('GET TRANSAKSI STATUS: ${response.statusCode}');
+  TransaksiRepository(this.token);
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => TransaksiModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Gagal memuat data transaksi: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (e is http.ClientException) {
-        throw Exception('Koneksi gagal. Periksa koneksi internet dan server.');
-      }
-      rethrow;
-    }
-  }
-
-  // TAMBAH: Method untuk get transaksi by user ID
   Future<List<TransaksiModel>> getTransaksiByUserId(int userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/transaksi?user_id=$userId')
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      print('🚀 GET Transaksi for user: $userId');
+      print('🔐 Token: $token');
 
-      print('GET TRANSAKSI BY USER STATUS: ${response.statusCode}');
+      if (token == null || token!.isEmpty) {
+        throw Exception('Token tidak tersedia. Silakan login kembali.');
+      }
+
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/transaksi/user/$userId'),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(Duration(seconds: 10));
+
+      print('📦 Response status: ${response.statusCode}');
+      print('📦 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => TransaksiModel.fromJson(json)).toList();
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        // 🔥 PERBAIKAN: Handle berbagai format response
+        if (responseData.containsKey('data')) {
+          final List<dynamic> data = responseData['data'];
+          final result = data
+              .map((json) => TransaksiModel.fromJson(json))
+              .toList();
+          print(
+            '✅ Successfully loaded ${result.length} transaksi for user $userId',
+          );
+          return result;
+        }
+        // Jika response langsung array (tanpa wrapper)
+        else if (responseData is List) {
+          final result = (responseData as List)
+              .map((json) => TransaksiModel.fromJson(json))
+              .toList();
+          print(
+            '✅ Successfully loaded ${result.length} transaksi for user $userId',
+          );
+          return result;
+        }
+        // Jika menggunakan format success/status
+        else if (responseData['success'] == true ||
+            responseData['status'] == 'success') {
+          final List<dynamic> data = responseData['data'] ?? [];
+          final result = data
+              .map((json) => TransaksiModel.fromJson(json))
+              .toList();
+          print(
+            '✅ Successfully loaded ${result.length} transaksi for user $userId',
+          );
+          return result;
+        } else {
+          throw Exception(
+            'Format response tidak dikenali: ${responseData.keys}',
+          );
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized - Token tidak valid');
+      } else if (response.statusCode == 404) {
+        throw Exception('Endpoint transaksi tidak ditemukan');
       } else {
-        throw Exception('Gagal memuat data transaksi: ${response.statusCode}');
+        throw Exception('Failed to load transaksi: ${response.statusCode}');
       }
     } catch (e) {
-      if (e is http.ClientException) {
-        throw Exception('Koneksi gagal. Periksa koneksi internet dan server.');
-      }
+      print('❌ Repository error: $e');
       rethrow;
     }
   }
 
   Future<TransaksiModel> getTransaksiById(int id) async {
     try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/transaksi/$id')
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/transaksi/$id'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token', // 🔥 TAMBAHKAN AUTHORIZATION
+            },
+          )
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
         return TransaksiModel.fromJson(data);
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized - Silakan login kembali');
       } else {
-        throw Exception('Gagal memuat detail transaksi: ${response.statusCode}');
+        throw Exception(
+          'Gagal memuat detail transaksi: ${response.statusCode}',
+        );
       }
     } catch (e) {
       if (e is http.ClientException) {
@@ -71,11 +116,18 @@ class TransaksiRepository {
 
   Future<TransaksiModel> addTransaksi(TransaksiModel transaksi) async {
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/transaksi'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(transaksi.toJson()),
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      print('📤 DATA TRANSAKSI KIRIM: ${transaksi.toJson()}');
+
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/transaksi'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token', // 🔥 TAMBAHKAN AUTHORIZATION
+            },
+            body: json.encode(transaksi.toJson()),
+          )
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       print('ADD TRANSAKSI STATUS: ${response.statusCode}');
       print('ADD TRANSAKSI BODY: ${response.body}');
@@ -95,13 +147,21 @@ class TransaksiRepository {
     }
   }
 
-  Future<TransaksiModel> updateTransaksi(int id, TransaksiModel transaksi) async {
+  Future<TransaksiModel> updateTransaksi(
+    int id,
+    TransaksiModel transaksi,
+  ) async {
     try {
-      final response = await http.put(
-        Uri.parse('${AppConfig.baseUrl}/transaksi/$id'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(transaksi.toJson()),
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      final response = await http
+          .put(
+            Uri.parse('${AppConfig.baseUrl}/transaksi/$id'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token', // 🔥 TAMBAHKAN AUTHORIZATION
+            },
+            body: json.encode(transaksi.toJson()),
+          )
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
@@ -120,9 +180,15 @@ class TransaksiRepository {
 
   Future<void> deleteTransaksi(int id) async {
     try {
-      final response = await http.delete(
-        Uri.parse('${AppConfig.baseUrl}/transaksi/$id')
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      final response = await http
+          .delete(
+            Uri.parse('${AppConfig.baseUrl}/transaksi/$id'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token', // 🔥 TAMBAHKAN AUTHORIZATION
+            },
+          )
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Gagal menghapus transaksi: ${response.statusCode}');
@@ -138,9 +204,15 @@ class TransaksiRepository {
   // Method untuk statistik
   Future<Map<String, dynamic>> getStatistik() async {
     try {
-      final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/transaksi/statistik')
-      ).timeout(Duration(milliseconds: AppConfig.connectTimeout));
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.baseUrl}/transaksi/statistik'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token', // 🔥 TAMBAHKAN AUTHORIZATION
+            },
+          )
+          .timeout(Duration(milliseconds: AppConfig.connectTimeout));
 
       if (response.statusCode == 200) {
         return json.decode(response.body);

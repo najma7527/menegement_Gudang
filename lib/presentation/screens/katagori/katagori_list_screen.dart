@@ -11,14 +11,17 @@ class KategoriListScreen extends StatefulWidget {
 }
 
 class _KategoriListScreenState extends State<KategoriListScreen> {
-  int _currentIndex = 1;
   final TextEditingController _searchController = TextEditingController();
   List<KatagoriModel> _filteredKategori = [];
 
   @override
   void initState() {
     super.initState();
-    _loadKategori();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadKategori();
+    });
+
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -27,9 +30,15 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
       context,
       listen: false,
     );
-    await kategoriProvider.loadKatagori(); // Pastikan method ini ada di provider
-    setState(() {
-      _filteredKategori = kategoriProvider.katagoriList;
+    await kategoriProvider.loadKatagori();
+
+    // 🔥 PERBAIKAN: Tunda setState sampai setelah build selesai
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _filteredKategori = kategoriProvider.katagoriList;
+        });
+      }
     });
   }
 
@@ -40,18 +49,21 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
       listen: false,
     );
 
-    if (query.isEmpty) {
-      setState(() {
-        _filteredKategori = kategoriProvider.katagoriList;
-      });
-    } else {
-      setState(() {
-        _filteredKategori = kategoriProvider.katagoriList.where((kategori) {
-          return kategori.nama.toLowerCase().contains(query) ||
-              (kategori.deskripsi?.toLowerCase().contains(query) ?? false);
-        }).toList();
-      });
-    }
+    // 🔥 PERBAIKAN: Tunda setState sampai setelah build selesai
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          if (query.isEmpty) {
+            _filteredKategori = kategoriProvider.katagoriList;
+          } else {
+            _filteredKategori = kategoriProvider.katagoriList.where((kategori) {
+              return kategori.nama.toLowerCase().contains(query) ||
+                  (kategori.deskripsi?.toLowerCase().contains(query) ?? false);
+            }).toList();
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -118,41 +130,41 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : _filteredKategori.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.category,
-                              size: ResponsiveLayout.isMobile(context) ? 48 : 64,
-                              color: AppColors.grey400,
-                            ),
-                            SizedBox(
-                              height: ResponsiveLayout.isMobile(context) ? 12 : 16,
-                            ),
-                            Text(
-                              'Tidak ada kategori',
-                              style: TextStyle(
-                                fontSize: ResponsiveLayout.isMobile(context)
-                                    ? 16
-                                    : 18,
-                                color: AppColors.grey600,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.category,
+                          size: ResponsiveLayout.isMobile(context) ? 48 : 64,
+                          color: AppColors.grey400,
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: _filteredKategori.length,
-                        itemBuilder: (context, index) {
-                          final kategori = _filteredKategori[index];
-                          return _buildKategoriCard(
-                            context,
-                            kategori,
-                            kategoriProvider,
-                          );
-                        },
-                      ),
+                        SizedBox(
+                          height: ResponsiveLayout.isMobile(context) ? 12 : 16,
+                        ),
+                        Text(
+                          'Tidak ada kategori',
+                          style: TextStyle(
+                            fontSize: ResponsiveLayout.isMobile(context)
+                                ? 16
+                                : 18,
+                            color: AppColors.grey600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _filteredKategori.length,
+                    itemBuilder: (context, index) {
+                      final kategori = _filteredKategori[index];
+                      return _buildKategoriCard(
+                        context,
+                        kategori,
+                        kategoriProvider,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -271,11 +283,15 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
                         color: AppColors.primary,
                         size: ResponsiveLayout.isMobile(context) ? 18 : 20,
                       ),
-                      SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
+                      SizedBox(
+                        width: ResponsiveLayout.isMobile(context) ? 6 : 8,
+                      ),
                       Text(
                         'Edit',
                         style: TextStyle(
-                          fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
+                          fontSize: ResponsiveLayout.isMobile(context)
+                              ? 12
+                              : 14,
                         ),
                       ),
                     ],
@@ -290,11 +306,15 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
                         color: AppColors.error,
                         size: ResponsiveLayout.isMobile(context) ? 18 : 20,
                       ),
-                      SizedBox(width: ResponsiveLayout.isMobile(context) ? 6 : 8),
+                      SizedBox(
+                        width: ResponsiveLayout.isMobile(context) ? 6 : 8,
+                      ),
                       Text(
                         'Hapus',
                         style: TextStyle(
-                          fontSize: ResponsiveLayout.isMobile(context) ? 12 : 14,
+                          fontSize: ResponsiveLayout.isMobile(context)
+                              ? 12
+                              : 14,
                         ),
                       ),
                     ],
@@ -308,7 +328,6 @@ class _KategoriListScreenState extends State<KategoriListScreen> {
     );
   }
 
-  // Helper function
   Color _getColorFromString(String? warnaString) {
     if (warnaString == null || warnaString.isEmpty) {
       return AppColors.primary;

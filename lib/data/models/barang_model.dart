@@ -56,7 +56,8 @@ class BarangModel extends BarangEntity {
     int? UserId,
     int? katagoriId,
     int? stok,
-    double? harga, int? userId,
+    double? harga,
+    int? userId,
   }) {
     return BarangModel(
       id: id ?? this.id,

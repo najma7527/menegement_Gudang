@@ -27,7 +27,7 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BarangProvider>(context, listen: false).loadBarang();
+      Provider.of<BarangProvider>(context, listen: false).loadBarangByUser();
     });
   }
 
@@ -314,7 +314,6 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  // Header Info
                   Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(
