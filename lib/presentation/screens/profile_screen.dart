@@ -1,13 +1,32 @@
+import 'dart:typed_data' show Uint8List;
+
 import 'package:flutter/material.dart';
 import 'package:gstok/presentation/screens/edit_profil.dart';
 import 'package:gstok/presentation/screens/responsive_layout.dart';
 import 'package:gstok/presentation/screens/setting_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        authProvider.fetchUser();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,14 +91,14 @@ class ProfilePage extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          // ✅ Foto profil dari backend Laravel - DIPERBAIKI
+                          // ✅ Foto profil - DIPERBAIKI: Gunakan CircleAvatar untuk menghilangkan ruang putih
                           Container(
                             width: ResponsiveLayout.isMobile(context)
-                                ? 100
-                                : 120,
+                                ? 110
+                                : 130,
                             height: ResponsiveLayout.isMobile(context)
-                                ? 100
-                                : 120,
+                                ? 110
+                                : 130,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -96,11 +115,12 @@ class ProfilePage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            clipBehavior: Clip.antiAlias,
-                            child: _buildProfileImage(
-                              fullProfilePhotoUrl,
-                              theme,
-                              context,
+                            child: ClipOval(
+                              child: _buildProfileImage(
+                                fullProfilePhotoUrl,
+                                theme,
+                                context,
+                              ),
                             ),
                           ),
 
@@ -247,79 +267,132 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ✅ Widget untuk menampilkan gambar profil dengan error handling yang lebih baik
   Widget _buildProfileImage(
     String? imageUrl,
     ThemeData theme,
     BuildContext context,
   ) {
-    if (imageUrl == null) {
+    if (imageUrl == null || imageUrl.isEmpty) {
       return _buildDefaultAvatar(theme, context);
     }
 
-    // Validasi URL sebelum digunakan
-    final validUrl = _validateAndFixUrl(imageUrl);
-    if (validUrl == null) {
-      return _buildDefaultAvatar(theme, context);
+    // 🔥 PERBAIKAN: Gunakan CircleAvatar untuk semua jenis gambar
+    if (imageUrl.startsWith('data:image')) {
+      // Base64 image - langsung gunakan CircleAvatar
+      print('✅ Loading base64 image with CircleAvatar');
+      return CircleAvatar(
+        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+        child: ClipOval(
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            loadingBuilder:
+                (
+                  BuildContext context,
+                  Widget child,
+                  ImageChunkEvent? loadingProgress,
+                ) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+            errorBuilder: (context, error, stackTrace) {
+              print('❌ Error loading base64 image: $error');
+              return _buildDefaultAvatarContent(theme, context);
+            },
+          ),
+        ),
+      );
+    } else {
+      // URL biasa - gunakan FutureBuilder dengan CircleAvatar
+      print('🔄 Loading image from URL with CircleAvatar: $imageUrl');
+      return _buildNetworkImageWithCircleAvatar(imageUrl, theme, context);
     }
+  }
 
-    return Image.network(
-      validUrl,
-      fit: BoxFit.cover,
-      loadingBuilder:
-          (
-            BuildContext context,
-            Widget child,
-            ImageChunkEvent? loadingProgress,
-          ) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                    : null,
+  // Untuk URL biasa dengan CircleAvatar
+  Widget _buildNetworkImageWithCircleAvatar(
+    String imageUrl,
+    ThemeData theme,
+    BuildContext context,
+  ) {
+    return FutureBuilder<Uint8List?>(
+      future: _loadImageWithAuth(imageUrl, context),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildDefaultAvatar(theme, context);
+        } else if (snapshot.hasError || snapshot.data == null) {
+          print('❌ Error loading image from URL: ${snapshot.error}');
+          return _buildDefaultAvatar(theme, context);
+        } else {
+          return CircleAvatar(
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+            child: ClipOval(
+              child: Image.memory(
+                snapshot.data!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
               ),
-            );
-          },
-      errorBuilder: (context, error, stackTrace) {
-        print('❌ Error loading profile photo: $error');
-        print('❌ URL yang gagal: $validUrl');
-        return _buildDefaultAvatar(theme, context);
+            ),
+          );
+        }
       },
     );
   }
 
-  // ✅ Validasi dan perbaiki URL
-  String? _validateAndFixUrl(String url) {
+  Future<Uint8List?> _loadImageWithAuth(
+    String imageUrl,
+    BuildContext context,
+  ) async {
     try {
-      // Perbaiki URL yang memiliki http:/ (satu slash)
-      if (url.startsWith('http:/') && !url.startsWith('http://')) {
-        url = url.replaceFirst('http:/', 'http://');
-      }
-      if (url.startsWith('https:/') && !url.startsWith('https://')) {
-        url = url.replaceFirst('https:/', 'https://');
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      final headers = <String, String>{'Accept': 'image/*'};
+
+      if (authProvider.token != null && authProvider.token!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${authProvider.token}';
       }
 
-      // Hapus double slash yang tidak perlu, kecuali setelah http://
-      url = url.replaceAll(RegExp(r'(?<!http:)/(?=/)'), '');
+      final response = await http
+          .get(Uri.parse(imageUrl), headers: headers)
+          .timeout(const Duration(seconds: 10));
 
-      return url;
+      if (response.statusCode == 200) {
+        print('✅ Image loaded from URL');
+        return response.bodyBytes;
+      } else {
+        print('❌ Failed to load image from URL: ${response.statusCode}');
+        return null;
+      }
     } catch (e) {
-      print('❌ Error validating URL: $e');
+      print('❌ Error loading image from URL: $e');
       return null;
     }
   }
 
-  // ✅ Widget untuk avatar default
+  // ✅ Widget untuk avatar default dengan CircleAvatar
   Widget _buildDefaultAvatar(ThemeData theme, BuildContext context) {
-    return Container(
-      color: theme.colorScheme.primary.withOpacity(0.1),
-      child: Icon(
-        Icons.person,
-        size: ResponsiveLayout.isMobile(context) ? 40 : 60,
-        color: theme.colorScheme.onPrimary.withOpacity(0.7),
-      ),
+    return CircleAvatar(
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+      child: _buildDefaultAvatarContent(theme, context),
+    );
+  }
+
+  // ✅ Konten untuk avatar default
+  Widget _buildDefaultAvatarContent(ThemeData theme, BuildContext context) {
+    return Icon(
+      Icons.person,
+      size: ResponsiveLayout.isMobile(context) ? 40 : 60,
+      color: theme.colorScheme.onPrimary.withOpacity(0.7),
     );
   }
 

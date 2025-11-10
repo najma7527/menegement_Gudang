@@ -124,7 +124,7 @@ class _TransaksiFormScreenState extends State<TransaksiFormScreen> {
         tipeTransaksi: _selectedTipe,
         hargaSatuan: hargaSatuan,
         tanggal: _selectedDate,
-        UserId: currentUserId, // GUNAKAN USER ID YANG SESUNGGUHNYA
+        UserId: currentUserId, 
       );
 
       print('DATA TRANSAKSI KIRIM: ${transaksi.toJson()}'); // Debug print

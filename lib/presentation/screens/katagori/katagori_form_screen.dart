@@ -1,10 +1,11 @@
 // katagori_form_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:gstok/data/models/barang_model.dart';
 import 'package:gstok/presentation/screens/responsive_layout.dart';
 import 'package:provider/provider.dart';
 import '../../providers/kategori_provider.dart';
-import '../../providers/auth_provider.dart'; // IMPORT AuthProvider
+import '../../providers/auth_provider.dart'; 
 import '../../../data/models/kategori_model.dart';
 import '../../../core/constants/app_colors.dart';
 

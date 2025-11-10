@@ -5,7 +5,6 @@ import '../../../data/models/kategori_model.dart';
 import '../../../core/constants/app_colors.dart';
 
 class BarangDetailScreen extends StatelessWidget {
-  // Helper function untuk convert string warna ke Color
   Color _getColorFromString(String? warnaString) {
     if (warnaString == null || warnaString.isEmpty) {
       return AppColors.primary;
@@ -63,7 +62,9 @@ class BarangDetailScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
+
                 child: Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -76,13 +77,13 @@ class BarangDetailScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   padding: EdgeInsets.all(
-                    ResponsiveLayout.isMobile(context) ? 16 : 24,
+                    ResponsiveLayout.isMobile(context) ? 24 : 38,
                   ),
                   child: Column(
                     children: [
                       Container(
-                        width: ResponsiveLayout.isMobile(context) ? 60 : 80,
-                        height: ResponsiveLayout.isMobile(context) ? 60 : 80,
+                        width: ResponsiveLayout.isMobile(context) ? 100 : 140,
+                        height: ResponsiveLayout.isMobile(context) ? 50 : 70,
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
@@ -137,6 +138,7 @@ class BarangDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               SizedBox(height: ResponsiveLayout.isMobile(context) ? 16 : 24),
 
               // Detail Information - TIDAK DIUBAH

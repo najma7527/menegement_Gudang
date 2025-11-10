@@ -9,6 +9,8 @@ import '../../../data/models/barang_model.dart';
 import '../../../core/constants/app_colors.dart';
 
 class KatagoriDetailScreen extends StatelessWidget {
+  get katagori => null;
+
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments;
@@ -325,10 +327,7 @@ class KatagoriDetailScreen extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          // Navigate to barang detail
-          // Navigator.pushNamed(context, '/barang/detail', arguments: barang);
-        },
+        onTap: () {},
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Row(
@@ -494,6 +493,19 @@ class KatagoriDetailScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _navigateToDetailBarang(
+    BuildContext context,
+    BarangModel barang,
+    KatagoriModel katagori,
+  ) {
+    Navigator.pushNamed(
+      context,
+      '/barang/detail',
+      arguments:
+          {'barang': barang, 'kategori': katagori} as Map<String, dynamic>,
     );
   }
 

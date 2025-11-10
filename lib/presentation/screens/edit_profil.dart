@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 import '../../presentation/screens/responsive_layout.dart';
 import '../providers/auth_provider.dart';
 
@@ -37,6 +38,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController = TextEditingController(
       text: authProvider.user?.email ?? '',
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        authProvider.fetchUser();
+      }
+    });
   }
 
   @override
@@ -186,14 +193,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildProfileAvatar(AuthProvider authProvider, ThemeData theme) {
-    final imageUrl = authProvider.user?.profilePhoto;
+    final imageUrl = authProvider.getFullProfilePhotoUrl();
 
     final hasNewImage =
         (kIsWeb && _webImageBytes != null) ||
         (!kIsWeb && _selectedImage != null);
-
-    // Cek apakah ada gambar dari server
-    final hasServerImage = imageUrl != null && imageUrl.isNotEmpty;
 
     return GestureDetector(
       onTap: _pickImage,
@@ -206,11 +210,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             height: ResponsiveLayout.isMobile(context) ? 100 : 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color:
-                    theme.colorScheme.onPrimary, // ✅ Sama dengan profil screen
-                width: 3,
-              ),
+              border: Border.all(color: theme.colorScheme.onPrimary, width: 3),
               boxShadow: [
                 BoxShadow(
                   color: theme.colorScheme.shadow.withOpacity(0.3),
@@ -224,9 +224,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 authProvider,
                 theme,
                 hasNewImage,
-                hasServerImage,
                 imageUrl,
               ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+              border: Border.all(color: theme.colorScheme.onPrimary, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              Icons.camera_alt_rounded,
+              color: theme.colorScheme.onPrimary,
+              size: ResponsiveLayout.isMobile(context) ? 18 : 20,
             ),
           ),
         ],
@@ -234,73 +253,124 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // ✅ Widget untuk konten avatar (gambar atau icon)
   Widget _buildAvatarContent(
     AuthProvider authProvider,
     ThemeData theme,
     bool hasNewImage,
-    bool hasServerImage,
     String? imageUrl,
   ) {
     // Prioritas 1: Gambar yang baru dipilih
     if (kIsWeb && _webImageBytes != null) {
-      return Image.memory(
-        _webImageBytes!,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildDefaultAvatarIcon(theme);
-        },
-      );
+      return Image.memory(_webImageBytes!, fit: BoxFit.cover);
     } else if (!kIsWeb && _selectedImage != null) {
-      return Image.file(
-        _selectedImage!,
+      return Image.file(_selectedImage!, fit: BoxFit.cover);
+    }
+    // Prioritas 2: Base64 image dari server
+    else if (imageUrl != null && imageUrl.startsWith('data:image')) {
+      return Image.network(
+        imageUrl,
         fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        loadingBuilder:
+            (
+              BuildContext context,
+              Widget child,
+              ImageChunkEvent? loadingProgress,
+            ) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
         errorBuilder: (context, error, stackTrace) {
           return _buildDefaultAvatarIcon(theme);
         },
       );
     }
-    // Prioritas 2: Gambar dari server
-    else if (hasServerImage) {
-      final fullImageUrl = imageUrl!.startsWith('http')
-          ? imageUrl
-          : '${authProvider.baseUrl.replaceAll('/api', '')}/$imageUrl'
-                .replaceAll('//', '/');
-
-      return Image.network(
-        fullImageUrl,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          print('❌ Error loading profile image: $error');
-          return _buildDefaultAvatarIcon(theme);
-        },
-      );
+    // Prioritas 3: URL biasa (fallback)
+    else if (imageUrl != null && imageUrl.isNotEmpty) {
+      return _buildCORSImage(imageUrl, theme, authProvider);
     } else {
       return _buildDefaultAvatarIcon(theme);
     }
   }
 
-  // ✅ Widget untuk icon avatar default - DISESUAIKAN dengan profil screen
+  // 🔥 PERBAIKAN: Custom image loader untuk edit profile
+  Widget _buildCORSImage(
+    String imageUrl,
+    ThemeData theme,
+    AuthProvider authProvider,
+  ) {
+    return FutureBuilder<Uint8List?>(
+      future: _loadImageWithAuth(imageUrl, authProvider),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.primary,
+              ),
+            ),
+          );
+        } else if (snapshot.hasError || snapshot.data == null) {
+          print('❌ Error loading image in edit profile: ${snapshot.error}');
+          return _buildDefaultAvatarIcon(theme);
+        } else {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          );
+        }
+      },
+    );
+  }
+
+  Future<Uint8List?> _loadImageWithAuth(
+    String imageUrl,
+    AuthProvider authProvider,
+  ) async {
+    try {
+      print('🔍 Loading image in edit profile: $imageUrl');
+
+      final headers = <String, String>{'Accept': 'application/json'};
+
+      // Tambahkan token jika tersedia
+      if (authProvider.token != null && authProvider.token!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${authProvider.token}';
+      }
+
+      final response = await http.get(Uri.parse(imageUrl), headers: headers);
+
+      if (response.statusCode == 200) {
+        print('✅ Image loaded successfully in edit profile: $imageUrl');
+        return response.bodyBytes;
+      } else {
+        print(
+          '❌ Failed to load image in edit profile: ${response.statusCode} - $imageUrl',
+        );
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error loading image in edit profile: $e - $imageUrl');
+      return null;
+    }
+  }
+
   Widget _buildDefaultAvatarIcon(ThemeData theme) {
     return Container(
       color: theme.colorScheme.primary.withOpacity(0.1),
       child: Icon(
         Icons.person,
         size: ResponsiveLayout.isMobile(context) ? 40 : 60,
-        color: theme.colorScheme.onPrimary.withOpacity(
-          0.7,
-        ), // ✅ Sama dengan profil screen
+        color: theme.colorScheme.onPrimary.withOpacity(0.7),
       ),
     );
   }

@@ -4,8 +4,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import '../../data/repositories/auth_repository.dart';
 import '../../data/models/user_model.dart';
 import 'provider_manager.dart';
@@ -16,9 +14,10 @@ class AuthProvider with ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _error;
-  bool _isAuthenticated = false;  
+  bool _isAuthenticated = false;
 
   final String baseUrl = "http://127.0.0.1:8000";
+  String get apiUrl => "$baseUrl/api";
 
   UserModel? get currentUser => _currentUser;
   UserModel? get user => _currentUser;
@@ -117,7 +116,6 @@ class AuthProvider with ChangeNotifier {
     // Reset semua provider
     ProviderManager.resetAllProviders(context);
 
-    // Reset auth provider
     reset();
 
     print('✅ Logout berhasil, semua provider di-reset');
@@ -249,7 +247,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> fetchUser() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/profile'),
+        Uri.parse('$apiUrl/profile'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $_token',
@@ -259,6 +257,15 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('📱 Data user diterima: ${data['user']}');
+
+        // Periksa base64
+        if (data['user']['profile_photo_base64'] != null) {
+          print(
+            '✅ Base64 diterima, panjang: ${data['user']['profile_photo_base64'].length}',
+          );
+        } else {
+          print('❌ Base64 tidak diterima dalam response');
+        }
 
         _currentUser = UserModel.fromJson(data['user']);
         notifyListeners();
@@ -272,6 +279,14 @@ class AuthProvider with ChangeNotifier {
   }
 
   String? getFullProfilePhotoUrl() {
+    // Prioritaskan base64 jika ada
+    if (_currentUser?.profilePhotoBase64 != null &&
+        _currentUser!.profilePhotoBase64!.isNotEmpty) {
+      print('✅ Menggunakan foto base64');
+      return _currentUser!.profilePhotoBase64;
+    }
+
+    // Jika tidak ada base64, coba bangun URL
     if (_currentUser?.profilePhoto == null ||
         _currentUser!.profilePhoto!.isEmpty) {
       print('❌ Tidak ada foto profil');
@@ -284,20 +299,28 @@ class AuthProvider with ChangeNotifier {
       return _currentUser!.profilePhoto;
     }
 
-    // Jika bukan URL lengkap, kita tidak akan membangun karena seharusnya backend sudah mengembalikan URL lengkap
-    print('❌ URL foto tidak lengkap: ${_currentUser!.profilePhoto}');
-    return null;
-  }
+    // Jika path relatif, gunakan route images yang baru
+    print(
+      '🛠️ Membangun URL lengkap untuk foto: ${_currentUser!.profilePhoto}',
+    );
 
-  // Method untuk check authentication status
-  Future<void> checkAuthStatus() async {
-    if (_token != null) {
-      await fetchUser();
-      _isAuthenticated = true;
-    } else {
-      _isAuthenticated = false;
+    // Bersihkan path
+    String cleanPath = _currentUser!.profilePhoto!;
+    if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+    if (cleanPath.startsWith('storage/')) cleanPath = cleanPath.substring(8);
+
+    // Coba beberapa URL yang mungkin
+    final possibleUrls = [
+      '$apiUrl/images/$cleanPath',
+      '$apiUrl/storage/$cleanPath',
+      '$baseUrl/storage/$cleanPath',
+    ];
+
+    for (final url in possibleUrls) {
+      print('🛠️ Mencoba URL: $url');
     }
-    notifyListeners();
+
+    return possibleUrls.first;
   }
 
   // Method untuk update user data secara manual (jika diperlukan)

@@ -2,10 +2,9 @@ class AppConfig {
   // Untuk Android Emulator & iOS Simulator
   static const String baseUrl = 'http://127.0.0.1:8000/api';
 
-  // Untuk Physical Device (ganti dengan IP komputer Laravel)
+  // // Untuk Physical Device (ganti dengan IP komputer Laravel)
   // static const String baseUrl = 'http://192.168.1.100:8000/api';
 
-  // Timeout settings
   static const int connectTimeout = 30000;
   static const int receiveTimeout = 30000;
 

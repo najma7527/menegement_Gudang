@@ -269,22 +269,6 @@ class DashboardScreen extends StatelessWidget {
             Icon(Icons.warning, color: Colors.orange),
             SizedBox(width: 8),
             Text('Semua Stok Kritis'),
-            SizedBox(width: 8),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${criticalItems.length}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ],
         ),
         content: SizedBox(
