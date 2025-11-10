@@ -8,7 +8,23 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kategori_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        authProvider.fetchUser();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -396,6 +412,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildWelcomeCard(BuildContext context, dynamic authProvider) {
+    final fullProfilePhotoUrl = authProvider.getFullProfilePhotoUrl();
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -415,14 +432,9 @@ class DashboardScreen extends StatelessWidget {
           padding: EdgeInsets.all(ResponsiveLayout.isMobile(context) ? 16 : 20),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: ResponsiveLayout.isMobile(context) ? 25 : 30,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
-                child: Icon(
-                  Icons.person,
-                  color: AppColors.primary,
-                  size: ResponsiveLayout.isMobile(context) ? 25 : 30,
-                ),
+              _buildProfileImage(
+                fullProfilePhotoUrl,
+                ResponsiveLayout.isMobile(context) ? 25 : 30,
               ),
               SizedBox(width: 16),
               Expanded(
@@ -690,6 +702,40 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileImage(String? imageUrl, double radius) {
+    final borderWidth = 4.0;
+    final borderColor = AppColors.grey300;
+
+    Widget avatarContent;
+
+    if (imageUrl == null || imageUrl.isEmpty) {
+      avatarContent = CircleAvatar(
+        radius: ResponsiveLayout.isMobile(context) ? 30 : 35,
+        backgroundColor: AppColors.primary.withOpacity(0.1),
+        child: Icon(Icons.person, color: AppColors.primary, size: radius),
+      );
+    } else if (imageUrl.startsWith('data:image')) {
+      avatarContent = CircleAvatar(
+        radius: ResponsiveLayout.isMobile(context) ? 30 : 35,
+        backgroundImage: NetworkImage(imageUrl),
+      );
+    } else {
+      avatarContent = CircleAvatar(
+        radius: ResponsiveLayout.isMobile(context) ? 30 : 35,
+        backgroundImage: NetworkImage(imageUrl),
+        backgroundColor: AppColors.primary.withOpacity(0.1),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: borderWidth),
+      ),
+      child: avatarContent,
     );
   }
 }
