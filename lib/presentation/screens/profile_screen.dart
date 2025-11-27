@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'reports/transaksi_report_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -191,7 +192,7 @@ class _ProfileScreenState extends State<ProfilePage> {
                           theme,
                         ),
                         SizedBox(
-                          height: ResponsiveLayout.isMobile(context) ? 16 : 20,
+                          height: ResponsiveLayout.isMobile(context) ? 4 : 8,
                         ),
                         _buildMenuButton(
                           'Pengaturan',
@@ -201,6 +202,21 @@ class _ProfileScreenState extends State<ProfilePage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => SettingsScreen(),
+                            ),
+                          ),
+                          theme,
+                        ),
+                        SizedBox(
+                          height: ResponsiveLayout.isMobile(context) ? 4 : 8,
+                        ),
+                        _buildMenuButton(
+                          'Cetak Laporan Transaksi',
+                          Icons.print_rounded,
+                          const Color.fromARGB(255, 255, 255, 255),
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TransaksiReportScreen(),
                             ),
                           ),
                           theme,

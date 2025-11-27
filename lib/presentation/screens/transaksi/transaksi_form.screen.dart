@@ -3,7 +3,7 @@ import 'package:gstok/presentation/screens/responsive_layout.dart';
 import 'package:provider/provider.dart';
 import '../../providers/transaksi_provider.dart';
 import '../../providers/barang_provider.dart';
-import '../../providers/auth_provider.dart'; // TAMBAHKAN IMPORT
+import '../../providers/auth_provider.dart'; 
 import '../../../data/models/transaksi_model.dart';
 import '../../../data/models/barang_model.dart';
 import '../../../core/constants/app_colors.dart';

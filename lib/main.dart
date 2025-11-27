@@ -17,6 +17,7 @@ import 'presentation/screens/barang/barang_detail_screen.dart';
 import 'presentation/screens/transaksi/transaksi_list_screen.dart';
 import 'presentation/screens/transaksi/transaksi_form.screen.dart';
 import 'presentation/screens/transaksi/transaksi_detail_screen.dart';
+import 'presentation/screens/reports/transaksi_report_screen.dart';
 import '../core/constants/app_colors.dart';
 import 'presentation/screens/profile_screen.dart';
 
@@ -111,6 +112,7 @@ class MyApp extends StatelessWidget {
           '/transaksi': (context) => TransaksiListScreen(),
           '/transaksi/form': (context) => TransaksiFormScreen(),
           '/transaksi/detail': (context) => TransaksiDetailScreen(),
+          '/reports/transaksi': (context) => TransaksiReportScreen(),
           '/profile': (context) => ProfilePage(),
         },
       ),
