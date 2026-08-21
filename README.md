@@ -1,71 +1,228 @@
-# gstok
+# 📦 gstok — Aplikasi Manajemen Gudang
 
-gstok adalah aplikasi manajemen gudang yang membantu pengguna mengelola data
-persediaan secara terpusat. Aplikasi ini dapat digunakan untuk mencatat barang,
-mengelompokkan barang berdasarkan kategori, memantau perubahan stok, dan membuat
-laporan transaksi.
+> **gstok** adalah aplikasi manajemen gudang yang membantu pengguna mengelola data persediaan secara terpusat.
+> Aplikasi ini dirancang untuk memudahkan pencatatan barang, pengelompokan kategori, pemantauan perubahan stok, hingga pembuatan laporan transaksi.
 
-## Untuk Apa Aplikasi Ini?
+---
 
-gstok dibuat untuk memudahkan proses pencatatan dan pemantauan aktivitas gudang.
-Dengan aplikasi ini, pengguna dapat mengetahui kondisi stok terkini, mencatat
-barang masuk dan keluar, serta memperoleh ringkasan transaksi tanpa harus
-melakukan pencatatan manual.
+## ✨ Tentang gstok
 
-## Fitur Utama
+**gstok** dibuat untuk memudahkan proses pencatatan dan pemantauan aktivitas gudang.
 
-- Registrasi, login, dan pengelolaan profil pengguna.
-- Dashboard ringkasan jumlah barang, kategori, serta transaksi masuk dan keluar.
-- Pengelolaan data barang dengan operasi tambah, lihat, ubah, hapus, dan pencarian.
-- Pengelolaan kategori barang, termasuk deskripsi dan pilihan warna kategori.
-- Pencatatan transaksi barang masuk dan barang keluar.
-- Pembaruan stok barang secara otomatis berdasarkan transaksi.
-- Peringatan dan notifikasi ketika stok barang berada pada kondisi kritis.
-- Detail barang, kategori, dan transaksi.
-- Penyaringan laporan transaksi berdasarkan periode harian, mingguan, bulanan,
-	atau rentang tanggal tertentu.
-- Pembuatan dan pencetakan laporan transaksi dalam format PDF.
-- Tampilan responsif untuk berbagai ukuran layar dan dukungan Flutter Web.
+Dengan aplikasi ini, pengguna dapat:
 
-## Teknologi yang Digunakan
+* 📦 Mengetahui kondisi stok terkini
+* 📥 Mencatat barang masuk
+* 📤 Mencatat barang keluar
+* 📊 Memantau perubahan stok
+* 🧾 Melihat ringkasan transaksi
+* 📄 Membuat dan mencetak laporan
 
-- **Flutter** sebagai framework untuk membangun aplikasi lintas platform.
-- **Dart** sebagai bahasa pemrograman.
-- **Provider** untuk pengelolaan state aplikasi.
-- **HTTP** dan **Dio** untuk komunikasi dengan REST API.
-- **Laravel** sebagai framework backend API.
-- **Shared Preferences** untuk penyimpanan data lokal aplikasi.
-- **Flutter Local Notifications** dan **Permission Handler** untuk notifikasi
-	serta pengelolaan izin perangkat.
-- **PDF** dan **Printing** untuk membuat serta mencetak laporan transaksi.
-- **Intl** untuk pemformatan tanggal dan mata uang.
-- **Image Picker**, **File Picker**, dan **URL Launcher** untuk kebutuhan media,
-	berkas, serta pembukaan tautan.
+Semua proses tersebut dapat dilakukan secara terpusat tanpa harus melakukan pencatatan secara manual.
 
-## Backend API
+---
 
-gstok terhubung dengan backend REST API yang dibuat menggunakan framework
-Laravel. Source code backend dapat dilihat di repository berikut:
+## 🚀 Fitur Utama
 
-[API Management Gudang](https://github.com/najma7527/API_menegement_Gudang)
+### 👤 Autentikasi & Profil
 
-## Struktur Singkat
+* Registrasi pengguna
+* Login pengguna
+* Pengelolaan profil pengguna
 
-- `lib/presentation`: layar aplikasi, widget, dan provider.
-- `lib/data`: model serta repository untuk mengakses API.
-- `lib/domain`: entity aplikasi.
-- `lib/core`: konstanta, konfigurasi, utilitas, dan jaringan.
-- `lib/services`: layanan notifikasi dan kebutuhan aplikasi lainnya.
-- `assets/images`: aset gambar dan logo aplikasi.
+### 📊 Dashboard
 
-## Menjalankan Proyek
+* Ringkasan jumlah barang
+* Ringkasan jumlah kategori
+* Ringkasan transaksi barang masuk
+* Ringkasan transaksi barang keluar
 
-Pastikan Flutter dan Dart sudah terpasang, lalu jalankan perintah berikut:
+### 📦 Manajemen Barang
+
+* Tambah data barang
+* Lihat detail barang
+* Ubah data barang
+* Hapus data barang
+* Pencarian barang
+
+### 🏷️ Manajemen Kategori
+
+* Pengelolaan kategori barang
+* Deskripsi kategori
+* Pilihan warna kategori
+
+### 🔄 Transaksi Stok
+
+* Pencatatan barang masuk
+* Pencatatan barang keluar
+* Pembaruan stok secara otomatis berdasarkan transaksi
+
+### 🔔 Notifikasi
+
+* Peringatan ketika stok berada pada kondisi kritis
+* Notifikasi untuk membantu pengguna memantau kondisi persediaan
+
+### 📑 Laporan
+
+* Detail barang
+* Detail kategori
+* Detail transaksi
+* Penyaringan laporan berdasarkan:
+
+  * Harian
+  * Mingguan
+  * Bulanan
+  * Rentang tanggal tertentu
+* Pembuatan laporan transaksi dalam format PDF
+* Pencetakan laporan transaksi
+
+### 💻 Responsif & Cross-Platform
+
+* Tampilan responsif untuk berbagai ukuran layar
+* Dukungan **Flutter Web**
+
+---
+
+## 🛠️ Teknologi yang Digunakan
+
+| Teknologi                          | Penggunaan                                         |
+| ---------------------------------- | -------------------------------------------------- |
+| 🐦 **Flutter**                     | Framework untuk membangun aplikasi lintas platform |
+| 🎯 **Dart**                        | Bahasa pemrograman                                 |
+| 🔄 **Provider**                    | Pengelolaan state aplikasi                         |
+| 🌐 **HTTP & Dio**                  | Komunikasi dengan REST API                         |
+| ⚙️ **Laravel**                     | Framework backend API                              |
+| 💾 **Shared Preferences**          | Penyimpanan data lokal aplikasi                    |
+| 🔔 **Flutter Local Notifications** | Notifikasi aplikasi                                |
+| 🔐 **Permission Handler**          | Pengelolaan izin perangkat                         |
+| 📄 **PDF**                         | Pembuatan laporan PDF                              |
+| 🖨️ **Printing**                   | Pencetakan laporan                                 |
+| 📅 **Intl**                        | Pemformatan tanggal dan mata uang                  |
+| 🖼️ **Image Picker**               | Pemilihan gambar                                   |
+| 📁 **File Picker**                 | Pemilihan berkas                                   |
+| 🔗 **URL Launcher**                | Membuka tautan                                     |
+
+---
+
+## 🔗 Backend API
+
+gstok terhubung dengan **REST API** yang dibuat menggunakan framework **Laravel**.
+
+Source code backend dapat dilihat pada repository berikut:
+
+👉 **[API Management Gudang](https://github.com/najma7527/API_menegement_Gudang)**
+
+---
+
+## 📁 Struktur Project
+
+```text
+lib/
+├── presentation/
+│   ├── screens/
+│   ├── widgets/
+│   └── providers/
+│
+├── data/
+│   ├── models/
+│   └── repositories/
+│
+├── domain/
+│   └── entities/
+│
+├── core/
+│   ├── constants/
+│   ├── config/
+│   ├── utils/
+│   └── network/
+│
+└── services/
+    └── notifications/
+
+assets/
+└── images/
+```
+
+### 📌 Penjelasan
+
+* `lib/presentation` — layar aplikasi, widget, dan provider.
+* `lib/data` — model serta repository untuk mengakses API.
+* `lib/domain` — entity aplikasi.
+* `lib/core` — konstanta, konfigurasi, utilitas, dan jaringan.
+* `lib/services` — layanan notifikasi dan kebutuhan aplikasi lainnya.
+* `assets/images` — aset gambar dan logo aplikasi.
+
+---
+
+## ⚙️ Menjalankan Project
+
+Pastikan **Flutter** dan **Dart** sudah terpasang pada perangkat.
+
+### 1. Clone Repository
+
+```bash
+git clone <repository-url>
+cd gstok
+```
+
+### 2. Install Dependencies
 
 ```bash
 flutter pub get
+```
+
+### 3. Konfigurasi API
+
+Sesuaikan konfigurasi **URL API** pada project agar aplikasi dapat terhubung dengan backend.
+
+### 4. Jalankan Aplikasi
+
+```bash
 flutter run
 ```
 
-Sesuaikan konfigurasi URL API pada project sebelum menjalankan aplikasi agar
-aplikasi dapat terhubung ke backend.
+---
+
+## 🔌 Alur Aplikasi
+
+```text
+┌───────────────┐
+│   Flutter App │
+└───────┬───────┘
+        │
+        │ REST API
+        ▼
+┌───────────────┐
+│ Laravel API   │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│ Data Gudang   │
+└───────────────┘
+```
+
+Aplikasi Flutter berkomunikasi dengan **Laravel REST API** untuk mengelola data barang, kategori, stok, dan transaksi.
+
+---
+
+## 📌 Ringkasan
+
+**gstok** menyediakan berbagai kebutuhan dasar manajemen gudang dalam satu aplikasi, mulai dari pengelolaan barang dan kategori, pencatatan transaksi, pemantauan stok, notifikasi stok kritis, hingga pembuatan laporan dalam format PDF.
+
+Dengan dukungan **Flutter Web**, aplikasi juga dapat digunakan pada berbagai ukuran layar.
+
+---
+
+## 👩‍💻 Developer
+
+**Najma**
+
+📌 Project: **gstok — Aplikasi Manajemen Gudang**
+
+---
+
+<p align="center">
+  <b>📦 gstok</b><br>
+  <i>Manage Stock. Manage Warehouse. Make It Simple.</i>
+</p>
